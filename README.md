@@ -2,11 +2,11 @@
 2D Space_Arcade Shooter
 
 
-**Galaxy Impact**
+**Galaxy Impact**  
 
-Bogdan Teodorov
+Bogdan Teodorov  
  
-**Summary**
+**Summary**  
 "Galaxy Impact" is an immersive 2D space shooter designed for PC gaming enthusiasts, offering a nostalgic nod to classic arcade titles while introducing a fresh and visually captivating experience. Players take command and navigate through a beautifully rendered galactic landscape filled with intense, retro-inspired space battles. The game seamlessly combines classic 8-bit graphics with the beloved gameplay mechanics of classic 2D shooters, creating a thrilling and accessible gaming experience.
 As players progress, they encounter waves of enemy spacecraft and formidable boss challenges, each demanding a unique combination of reflexes and strategic decision-making. "Galaxy Impact" boasts an array of upgradable weapons and unlockable abilities, allowing players to tailor their spacecraft to their preferred playstyle. The game's engaging narrative unfolds as players explore the mysteries of the galaxy, providing an added layer of depth to the action-packed gameplay.
  
