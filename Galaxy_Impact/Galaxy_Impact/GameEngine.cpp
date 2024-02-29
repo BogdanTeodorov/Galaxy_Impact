@@ -10,7 +10,7 @@
 
 GameEngine::GameEngine(const std::string& path)
 {
-    Assets::getInstance().loadFromFile("../config.txt") ;
+    Assets::getInstance().loadFromFile("../configGI.txt") ;
 	init(path);
 }
 

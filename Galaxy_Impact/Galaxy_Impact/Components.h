@@ -107,14 +107,19 @@ struct COccupied : public Component {
 
 struct CInput : public Component
 {
-    enum dirs {
+    /*enum dirs {
         UP = 1 << 0,
         DOWN = 1 << 1,
         LEFT = 1 << 2,
         RIGHT = 1 << 3
     };
 
-    unsigned char dir{0};
+    unsigned char dir{0};*/
+
+    bool up{ false };
+    bool left{ false };
+    bool right{ false };
+    bool down{ false };
 
     CInput() = default;
 };

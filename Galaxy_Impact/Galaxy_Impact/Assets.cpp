@@ -155,6 +155,36 @@ void Assets::loadJson(const std::string& path) {
             }
             f.close();
         }
+        //if (token == "AsepriteJSON") {
+        //    using json = nlohmann::json;
+
+        //    std::string  path;
+        //    confFile >> path;
+
+        //    // read the FrameSets from the json file
+        //    std::ifstream f(path);
+        //    json frameData = json::parse(f)["frames"];
+
+        //    std::cout << std::setw(4) << frameData << "\n\n";
+        //    f.clear(); // Clear eof and other flags
+        //    f.seekg(0, 0); // Seek back to the start of the file
+
+        //    //json metaData = json::parse(f)["meta"]["frameTags"];
+
+
+        //   /* int frameCounter{ 0 };*/
+        //    for (auto FD : frameData) {
+        //        std::string tmp = FD["filename"];
+        //                auto ir = sf::IntRect(FD["frame"]["x"], FD["frame"]["y"],
+        //                    FD["frame"]["w"], FD["frame"]["h"]);
+        //                m_frameSets[tmp].push_back(ir);
+        //            
+        //        
+        //        //frameCounter++;
+        //    }
+        //    std::cout << "Loaded JSON: " << path << "\n";
+        //    f.close();
+        //}
         else
         {
             // ignore rest of line and continue

@@ -32,8 +32,8 @@ Scene_GalaxyImpact::Scene_GalaxyImpact(GameEngine* gameEngine, const std::string
     registerActions();
 
 
-    MusicPlayer::getInstance().play("gameTheme");
-    MusicPlayer::getInstance().setVolume(50);
+    //MusicPlayer::getInstance().play("gameTheme");
+    //MusicPlayer::getInstance().setVolume(50);
 
     init();
 
@@ -43,13 +43,9 @@ Scene_GalaxyImpact::Scene_GalaxyImpact(GameEngine* gameEngine, const std::string
 
 
 void Scene_GalaxyImpact::init() {
-    auto pos = m_worldView.getSize();
-
-    // spawn frog in middle of first row
-    pos.x = pos.x / 2.f;
-    pos.y -= 20.f;
    
     spawnPlayer();
+    spawnEnemy();
 }
 
 void Scene_GalaxyImpact::sMovement(sf::Time dt) {
@@ -94,32 +90,43 @@ void Scene_GalaxyImpact::playerMovement() {
     if (m_player->hasComponent<CState>() && m_player->getComponent<CState>().state == "dead")
         return;
 
-    auto& dir = m_player->getComponent<CInput>().dir;
-    auto& pos = m_player->getComponent<CTransform>().pos;
+    /*auto& dir = m_player->getComponent<CInput>().dir;*/
+    auto& vel = m_player->getComponent<CTransform>().vel;
+    auto& input = m_player->getComponent<CInput>();
+    float pSpeed = 200.f;
 
-    if (dir & CInput::UP) {
-        m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("up"));
-        pos.y -= 40.f;
-    }
-    if (dir & CInput::DOWN) {
-        m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("down"));
-        pos.y += 40.f;
-    }
+    sf::Vector2f pv{ 0.f, 0.f };
+    
 
-    if (dir & CInput::LEFT) {
-        m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("left"));
-        pos.x -= 40.f;
-    }
 
-    if (dir & CInput::RIGHT) {
-        m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("right"));
-        pos.x += 40.f;
+    if (input.up) {
+        m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("mc"));
+        pv.y -= 1.f;
+    }
+    if (input.down) {
+        m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("mc"));
+        pv.y += 1.f;
     }
 
-    if (dir != 0) {
-        SoundPlayer::getInstance().play("hop", m_player->getComponent<CTransform>().pos);
-        dir = 0;
+    if (input.left) {
+        m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("mc"));
+        pv.x -=1.f;
     }
+
+    if (input.right) {
+        m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("mc"));
+        pv.x += 1.f;
+    }
+
+    pv = normalize(pv);
+    vel = pv * pSpeed;
+
+    //if (dir != 0) {
+    //    //SoundPlayer::getInstance().play("hop", m_player->getComponent<CTransform>().pos);
+    //    dir = 0;
+    //}
+
+    
 }
 
 
@@ -225,21 +232,19 @@ void Scene_GalaxyImpact::sDoAction(const Command& action) {
         else if (action.name() == "TOGGLE_GRID") { m_drawGrid = !m_drawGrid; }
 
         // Player control
-        if (action.name() == "LEFT") { m_player->getComponent<CInput>().dir = CInput::LEFT; }
-        else if (action.name() == "RIGHT") { m_player->getComponent<CInput>().dir = CInput::RIGHT; }
-        else if (action.name() == "UP") {
-            m_player->getComponent<CInput>().dir = CInput::UP;
-            auto& pos = m_player->getComponent<CTransform>().pos;
-
-        }
-        else if (action.name() == "DOWN") { m_player->getComponent<CInput>().dir = CInput::DOWN; }
+        if (action.name() == "LEFT") { m_player->getComponent<CInput>().left = true; }
+        else if (action.name() == "RIGHT") { m_player->getComponent<CInput>().right = true; }
+        else if (action.name() == "UP") {m_player->getComponent<CInput>().up = true;}
+        else if (action.name() == "DOWN") { m_player->getComponent<CInput>().down = true; }
     }
     // on Key Release
     // the frog can only go in one direction at a time, no angles
     // use a bitset and exclusive setting.
-    else if (action.type() == "END" && (action.name() == "LEFT" || action.name() == "RIGHT" || action.name() == "UP" ||
-        action.name() == "DOWN")) {
-        m_player->getComponent<CInput>().dir = 0;
+    else if (action.type() == "END") {
+        if (action.name() == "LEFT") { m_player->getComponent<CInput>().left = false; }
+        else if (action.name() == "RIGHT") { m_player->getComponent<CInput>().right = false; }
+        else if (action.name() == "UP") { m_player->getComponent<CInput>().up = false; }
+        else if (action.name() == "DOWN") { m_player->getComponent<CInput>().down = false; }
     }
 }
 
@@ -247,15 +252,42 @@ void Scene_GalaxyImpact::sDoAction(const Command& action) {
 void Scene_GalaxyImpact::spawnPlayer() {
     //spawn position
     auto pos = m_worldView.getSize();
-    pos.x = pos.x / 2.f;
-    pos.y -= 20.f;
-
+    pos.x = 0.f;
+    pos.y = pos.y / 2;
+    
     m_player = m_entityManager.addEntity("player");
     m_player->addComponent<CTransform>(pos);
-    m_player->addComponent<CBoundingBox>(sf::Vector2f(15.f, 15.f));
+    m_player->addComponent<CBoundingBox>(sf::Vector2f(60.f, 36.f));
     m_player->addComponent<CState>().state = "grounded";
     m_player->addComponent<CInput>();
-    m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("up"));
+    m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("mc"));
+}
+
+void Scene_GalaxyImpact::spawnEnemy()
+{
+   float enemySpeed = 0.f;
+   auto view = m_worldView.getSize();
+   auto pos = sf::Vector2f(view.x + 100.f, view.y / 2);
+   sf::Vector2f eVel(1.f, 0.f);
+   // add all tags of enemy ships;
+   for (const auto& enemyPair : enemyNames) {
+       const Enemies enemyType = enemyPair.first;   // Get the enum value
+       const std::string& enemyName = enemyPair.second; // Get the enemy name
+
+        auto enemy = m_entityManager.addEntity(enemyName); // Add entity using the enemy name
+
+      //use enemyType if needed to differentiate between enemy types
+       if (enemyType == Enemies::Rusher) {
+           // Do something specific for the Rusher enemy type
+           enemySpeed = -200;
+           eVel = normalize(eVel);
+           eVel = eVel * enemySpeed;
+           enemy->addComponent<CBoundingBox>(sf::Vector2f(50.f, 45.f));
+           enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Rusher]));
+           enemy->addComponent<CTransform>(pos, eVel);
+
+       }
+   }
 }
 
 
@@ -356,7 +388,7 @@ void Scene_GalaxyImpact::adjustPlayerPosition() {
     auto bot = center.y + viewHalfSize.y;
 
     auto& player_pos = m_player->getComponent<CTransform>().pos;
-    auto halfSize = sf::Vector2f{ 20, 20 };
+    auto halfSize = sf::Vector2f{ m_player->getComponent<CBoundingBox>().halfSize.x, m_player->getComponent<CBoundingBox>().halfSize.y};
     // keep player in bounds
     player_pos.x = std::max(player_pos.x, left + halfSize.x);
     player_pos.x = std::min(player_pos.x, right - halfSize.x);

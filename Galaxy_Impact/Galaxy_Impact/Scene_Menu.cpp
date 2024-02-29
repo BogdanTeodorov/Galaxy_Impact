@@ -24,7 +24,7 @@ void Scene_Menu:: init()
 	registerAction(sf::Keyboard::D,			"PLAY");
 	registerAction(sf::Keyboard::Escape,	"QUIT");
 
-	m_title = "GEX GalaxyImpact";
+	m_title = "Galaxy Impact";
 	m_menuStrings.push_back("Level 1");
 	m_menuStrings.push_back("Level 2");
 	m_menuStrings.push_back("Level 3");
@@ -35,7 +35,7 @@ void Scene_Menu:: init()
 
 	m_menuText.setFont(Assets::getInstance().getFont("main"));
 
-	const size_t CHAR_SIZE{ 64 };
+	const size_t CHAR_SIZE{ 54 };
 	m_menuText.setCharacterSize(CHAR_SIZE);
 
 }
@@ -61,7 +61,7 @@ void Scene_Menu::sRender()
 	sf::Text footer("UP: W    DOWN: S   PLAY:D    QUIT: ESC", 
 		Assets::getInstance().getFont("main"), 20);
 	footer.setFillColor(normalColor);
-	footer.setPosition(32, 700);
+	footer.setPosition(32, 580);
 
 	m_game->window().clear(backgroundColor);
 
@@ -69,6 +69,7 @@ void Scene_Menu::sRender()
 	m_menuText.setString(m_title);
 	m_menuText.setPosition(10, 10);
 	m_game->window().draw(m_menuText);
+	m_game->window().draw(footer);
 
 	for (size_t i{ 0 }; i < m_menuStrings.size(); ++i)
 	{
@@ -78,7 +79,7 @@ void Scene_Menu::sRender()
 		m_game->window().draw(m_menuText);
 	} 
 
-	m_game->window().draw(footer);
+	
 	//m_game->window().display();
 
 }

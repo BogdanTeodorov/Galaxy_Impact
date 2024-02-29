@@ -1,0 +1,498 @@
+{
+	"frames": [
+		{
+			"filename": "Lvl1Boss (0).png",
+			"frame": {
+				"x": 1,
+				"y": 1,
+				"w": 100,
+				"h": 100
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 100
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 100
+			}
+		},
+		{
+			"filename": "predator (0).png",
+			"frame": {
+				"x": 103,
+				"y": 1,
+				"w": 63,
+				"h": 61
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 63,
+				"h": 61
+			},
+			"sourceSize": {
+				"w": 63,
+				"h": 61
+			}
+		},
+		{
+			"filename": "assault (0).png",
+			"frame": {
+				"x": 168,
+				"y": 1,
+				"w": 37,
+				"h": 38
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 37,
+				"h": 38
+			},
+			"sourceSize": {
+				"w": 37,
+				"h": 38
+			}
+		},
+		{
+			"filename": "asteroid-v1 (0).png",
+			"frame": {
+				"x": 207,
+				"y": 1,
+				"w": 24,
+				"h": 16
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 24,
+				"h": 16
+			},
+			"sourceSize": {
+				"w": 24,
+				"h": 16
+			}
+		},
+		{
+			"filename": "asteroid-v2 (0).png",
+			"frame": {
+				"x": 233,
+				"y": 1,
+				"w": 20,
+				"h": 16
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 20,
+				"h": 16
+			},
+			"sourceSize": {
+				"w": 20,
+				"h": 16
+			}
+		},
+		{
+			"filename": "boss-bullet (0).png",
+			"frame": {
+				"x": 255,
+				"y": 1,
+				"w": 64,
+				"h": 8
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 64,
+				"h": 8
+			},
+			"sourceSize": {
+				"w": 64,
+				"h": 8
+			}
+		},
+		{
+			"filename": "boss-missile (0).png",
+			"frame": {
+				"x": 321,
+				"y": 1,
+				"w": 48,
+				"h": 20
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 48,
+				"h": 20
+			},
+			"sourceSize": {
+				"w": 48,
+				"h": 20
+			}
+		},
+		{
+			"filename": "bullet (0).png",
+			"frame": {
+				"x": 371,
+				"y": 1,
+				"w": 16,
+				"h": 16
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 16,
+				"h": 16
+			},
+			"sourceSize": {
+				"w": 16,
+				"h": 16
+			}
+		},
+		{
+			"filename": "ebullet-v1 (0).png",
+			"frame": {
+				"x": 389,
+				"y": 1,
+				"w": 16,
+				"h": 16
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 16,
+				"h": 16
+			},
+			"sourceSize": {
+				"w": 16,
+				"h": 16
+			}
+		},
+		{
+			"filename": "ebullet-v2 (0).png",
+			"frame": {
+				"x": 407,
+				"y": 1,
+				"w": 16,
+				"h": 16
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 16,
+				"h": 16
+			},
+			"sourceSize": {
+				"w": 16,
+				"h": 16
+			}
+		},
+		{
+			"filename": "explosion (0).png",
+			"frame": {
+				"x": 425,
+				"y": 1,
+				"w": 25,
+				"h": 24
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 25,
+				"h": 24
+			},
+			"sourceSize": {
+				"w": 25,
+				"h": 24
+			}
+		},
+		{
+			"filename": "explosion (1).png",
+			"frame": {
+				"x": 452,
+				"y": 1,
+				"w": 32,
+				"h": 31
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 32,
+				"h": 31
+			},
+			"sourceSize": {
+				"w": 32,
+				"h": 31
+			}
+		},
+		{
+			"filename": "laser (0).png",
+			"frame": {
+				"x": 486,
+				"y": 1,
+				"w": 66,
+				"h": 11
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 66,
+				"h": 11
+			},
+			"sourceSize": {
+				"w": 66,
+				"h": 11
+			}
+		},
+		{
+			"filename": "laser-beam (0).png",
+			"frame": {
+				"x": 1,
+				"y": 103,
+				"w": 600,
+				"h": 14
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 600,
+				"h": 14
+			},
+			"sourceSize": {
+				"w": 600,
+				"h": 14
+			}
+		},
+		{
+			"filename": "laser-pickup (0).png",
+			"frame": {
+				"x": 554,
+				"y": 1,
+				"w": 24,
+				"h": 20
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 24,
+				"h": 20
+			},
+			"sourceSize": {
+				"w": 24,
+				"h": 20
+			}
+		},
+		{
+			"filename": "life (0).png",
+			"frame": {
+				"x": 580,
+				"y": 1,
+				"w": 16,
+				"h": 16
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 16,
+				"h": 16
+			},
+			"sourceSize": {
+				"w": 16,
+				"h": 16
+			}
+		},
+		{
+			"filename": "nolife (0).png",
+			"frame": {
+				"x": 207,
+				"y": 19,
+				"w": 16,
+				"h": 16
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 16,
+				"h": 16
+			},
+			"sourceSize": {
+				"w": 16,
+				"h": 16
+			}
+		},
+		{
+			"filename": "mc (0).png",
+			"frame": {
+				"x": 255,
+				"y": 14,
+				"w": 60,
+				"h": 36
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 60,
+				"h": 36
+			},
+			"sourceSize": {
+				"w": 60,
+				"h": 36
+			}
+		},
+		{
+			"filename": "missile (0).png",
+			"frame": {
+				"x": 371,
+				"y": 19,
+				"w": 32,
+				"h": 32
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 32,
+				"h": 32
+			},
+			"sourceSize": {
+				"w": 32,
+				"h": 32
+			}
+		},
+		{
+			"filename": "missile-pickup (0).png",
+			"frame": {
+				"x": 225,
+				"y": 19,
+				"w": 20,
+				"h": 20
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 20,
+				"h": 20
+			},
+			"sourceSize": {
+				"w": 20,
+				"h": 20
+			}
+		},
+		{
+			"filename": "power-charge (0).png",
+			"frame": {
+				"x": 405,
+				"y": 19,
+				"w": 16,
+				"h": 16
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 16,
+				"h": 16
+			},
+			"sourceSize": {
+				"w": 16,
+				"h": 16
+			}
+		},
+		{
+			"filename": "rusher (0).png",
+			"frame": {
+				"x": 486,
+				"y": 14,
+				"w": 50,
+				"h": 45
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 50,
+				"h": 45
+			},
+			"sourceSize": {
+				"w": 50,
+				"h": 45
+			}
+		},
+		{
+			"filename": "rusher-explosion (0).png",
+			"frame": {
+				"x": 317,
+				"y": 23,
+				"w": 24,
+				"h": 24
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 24,
+				"h": 24
+			},
+			"sourceSize": {
+				"w": 24,
+				"h": 24
+			}
+		}
+	],
+	"meta": {
+		"app": "http://www.codeandweb.com/texturepacker",
+		"version": "1.0",
+		"image": "spritesheet.png",
+		"format": "RGBA8888",
+		"size": {
+			"w": 602,
+			"h": 118
+		},
+		"scale": "1"
+	}
+}

@@ -25,7 +25,6 @@ Sound hop               ../assets/Sound/froggerMove.wav
 
 JSON                    ../assets/Textures/FroggerAtlas.json
 
-
 #
 #  Animation    Name            Texture     Speed   Repeats
 Animation       up              Entities    8        no

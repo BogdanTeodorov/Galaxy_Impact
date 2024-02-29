@@ -20,8 +20,9 @@ struct LevelConfig {
     sf::Time    fireInterfal{ sf::seconds(5) };
 
     std::map<std::string,
-        std::vector<std::pair<float, sf::Time>>> directions;
+    std::vector<std::pair<float, sf::Time>>> directions;
 };
+
 
 
 class Scene_GalaxyImpact : public Scene {
@@ -30,7 +31,20 @@ private:
     sf::View        m_worldView;
     sf::FloatRect   m_worldBounds;
     LevelConfig     m_config;
-    
+    enum Enemies
+    {
+        Rusher,
+        Assault,
+        Predator
+
+    };
+
+    std::map<Enemies, std::string> enemyNames = {
+        {Enemies::Rusher, "rusher"},
+        {Enemies::Assault, "assault"},
+        {Enemies::Predator, "predator"}
+    };
+
 
 
     bool			m_drawTextures{ true };
@@ -38,7 +52,7 @@ private:
     bool			m_drawGrid{ false };
     int             m_score{ 0 };
     int             m_lives{ 3 };
-    int             lilyCount{ 0 };
+    //int             lilyCount{ 0 };
 
 
     //systems
@@ -56,6 +70,7 @@ private:
     void            checkPlayerState();
     void	        registerActions();
     void            spawnPlayer();
+    void            spawnEnemy();
     
 
 
