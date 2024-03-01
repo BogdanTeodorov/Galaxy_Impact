@@ -23,13 +23,20 @@ namespace {
     std::mt19937 rng(rd());
 }
 
+std::uniform_real_distribution<float> spawnIntervalDistribution(2.0f, 4.0f);
+sf::Time spawnInterval;
+sf::Time spawnTimer;
+sf::Vector2f enemyPrevPos;
+
 
 
 Scene_GalaxyImpact::Scene_GalaxyImpact(GameEngine* gameEngine, const std::string& levelPath)
     : Scene(gameEngine)
-    , m_worldView(gameEngine->window().getDefaultView()) {
+    , m_worldView(gameEngine->window().getDefaultView()) 
+{
     loadLevel(levelPath);
     registerActions();
+    
 
 
     //MusicPlayer::getInstance().play("gameTheme");
@@ -44,8 +51,11 @@ Scene_GalaxyImpact::Scene_GalaxyImpact(GameEngine* gameEngine, const std::string
 
 void Scene_GalaxyImpact::init() {
    
+    enemyPrevPos = sf::Vector2f(0.f, 0.f);
     spawnPlayer();
-    spawnEnemy();
+    // Randomly determine the time interval between spawns
+    spawnInterval = sf::seconds(spawnIntervalDistribution(rng));
+    spawnTimer = sf::seconds(0.f);
 }
 
 void Scene_GalaxyImpact::sMovement(sf::Time dt) {
@@ -196,7 +206,7 @@ void Scene_GalaxyImpact::sRender() {
         auto& anim = e->getComponent<CAnimation>().animation;
         auto& tfm = e->getComponent<CTransform>();
         anim.getSprite().setPosition(tfm.pos);
-        anim.getSprite().setRotation(tfm.angle);
+        //anim.getSprite().setRotation(tfm.angle);
         m_game->window().draw(anim.getSprite());
 
         if (m_drawAABB) {
@@ -266,28 +276,158 @@ void Scene_GalaxyImpact::spawnPlayer() {
 void Scene_GalaxyImpact::spawnEnemy()
 {
    float enemySpeed = 0.f;
-   auto view = m_worldView.getSize();
-   auto pos = sf::Vector2f(view.x + 100.f, view.y / 2);
+   auto& viewH = m_worldView.getCenter();
+   auto& viewV = m_worldView.getSize();
+
+   // Random number generator for enemy type, quantity, and spawn intervals
+   std::uniform_int_distribution<int> enemyTypeDistribution(0, enemyNames.size() - 1);
+   std::uniform_int_distribution<int> quantityDistribution(1, 4);
+   std::uniform_real_distribution<float> enemyVerticalSpawnRange(1.0f, 4.0f);
+
+
+   // basic characterstics
    sf::Vector2f eVel(1.f, 0.f);
-   // add all tags of enemy ships;
-   for (const auto& enemyPair : enemyNames) {
-       const Enemies enemyType = enemyPair.first;   // Get the enum value
-       const std::string& enemyName = enemyPair.second; // Get the enemy name
+   int numEnemies = quantityDistribution(rng);
 
-        auto enemy = m_entityManager.addEntity(enemyName); // Add entity using the enemy name
+  
+   for (int i = 0; i < numEnemies; i++) {
+      Enemies enemyType = static_cast<Enemies>(enemyTypeDistribution(rng));
+      auto pos = sf::Vector2f((viewH.x*2) + 100.f, viewV.y / enemyVerticalSpawnRange(rng));
+      const std::string& enemyName = enemyNames[enemyType];
 
-      //use enemyType if needed to differentiate between enemy types
-       if (enemyType == Enemies::Rusher) {
-           // Do something specific for the Rusher enemy type
-           enemySpeed = -200;
-           eVel = normalize(eVel);
-           eVel = eVel * enemySpeed;
-           enemy->addComponent<CBoundingBox>(sf::Vector2f(50.f, 45.f));
-           enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Rusher]));
-           enemy->addComponent<CTransform>(pos, eVel);
+      auto enemy = m_entityManager.addEntity(enemyName); // Add entity 
+      if (enemyPrevPos.y == 0 || (enemyPrevPos.y - pos.y) > std::abs(40.f)) {
+          if (enemyType == Enemies::Rusher) {
+              // Customize Rusher enemy
+              pos.x = (viewH.x * 2);
+              pos.y = m_player->getComponent<CTransform>().pos.y;
+              enemySpeed = -800;
+              eVel = normalize(eVel);
+              eVel = eVel * enemySpeed;
+              enemy->addComponent<CBoundingBox>(sf::Vector2f(50.f, 45.f));
+              enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Rusher]));
+              enemy->addComponent<CTransform>(pos, eVel);
 
-       }
+
+          }
+          else if (enemyType == Enemies::Assault) {
+              // Customize Assault enemy
+              enemySpeed = -200;
+              // Add additional customization if needed
+              eVel = normalize(eVel);
+              eVel = eVel * enemySpeed;
+              enemy->addComponent<CBoundingBox>(sf::Vector2f(63.f, 61.f));
+              enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Predator]));
+              enemy->addComponent<CTransform>(pos, eVel);
+              auto& eRotation = enemy->getComponent<CAnimation>().animation.getSprite();
+              eRotation.setRotation(90.f);
+          }
+          else if (enemyType == Enemies::Predator) {
+              // Customize Predator enemy
+              // Add additional customization if needed
+              enemySpeed = -200;
+              eVel = normalize(eVel);
+              eVel = eVel * enemySpeed;
+              enemy->addComponent<CBoundingBox>(sf::Vector2f(37.f, 38.f));
+              enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Assault]));
+              enemy->addComponent<CTransform>(pos, eVel);
+          }
+      }
+      else {
+
+          if (enemyType == Enemies::Rusher) {
+              // Customize Rusher enemy
+              pos.x = (viewH.x * 2) + 50.f;
+              pos.y = m_player->getComponent<CTransform>().pos.y;
+              enemySpeed = -800;
+              eVel = normalize(eVel);
+              eVel = eVel * enemySpeed;
+              enemy->addComponent<CBoundingBox>(sf::Vector2f(50.f, 45.f));
+              enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Rusher]));
+              enemy->addComponent<CTransform>(pos, eVel);
+
+
+          }
+          else if (enemyType == Enemies::Assault) {
+              // Customize Assault enemy
+              enemySpeed = -200;
+              pos.y += 200.f;
+              // Add additional customization if needed
+              eVel = normalize(eVel);
+              eVel = eVel * enemySpeed;
+              enemy->addComponent<CBoundingBox>(sf::Vector2f(63.f, 61.f));
+              enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Predator]));
+              enemy->addComponent<CTransform>(pos, eVel);
+              auto& eRotation = enemy->getComponent<CAnimation>().animation.getSprite();
+              eRotation.setRotation(90.f);
+          }
+          else if (enemyType == Enemies::Predator) {
+              // Customize Predator enemy
+              // Add additional customization if needed
+              enemySpeed = -200;
+              pos.y += 200.f;
+              eVel = normalize(eVel);
+              eVel = eVel * enemySpeed;
+              enemy->addComponent<CBoundingBox>(sf::Vector2f(37.f, 38.f));
+              enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Assault]));
+              enemy->addComponent<CTransform>(pos, eVel);
+          }
+
+      }
+      enemyPrevPos.y = pos.y;
+      
+     
+
    }
+   // add all tags of enemy ships;
+   //for (const auto& enemyPair : enemyNames) {
+   //    const Enemies enemyType = enemyPair.first;   // Get the enum value
+   //    const std::string& enemyName = enemyPair.second; // Get the enemy name
+
+   //     auto enemy = m_entityManager.addEntity(enemyName); // Add entity using the enemy name
+
+   //   //////use enemyType if needed to differentiate between enemy types
+   //   // if (enemyType == Enemies::Rusher) {
+   //   //     // Do something specific for the Rusher enemy type
+   //   //     enemySpeed = -500;
+   //   //     eVel = normalize(eVel);
+   //   //     eVel = eVel * enemySpeed;
+   //   //     enemy->addComponent<CBoundingBox>(sf::Vector2f(50.f, 45.f));
+   //   //     enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Rusher]));
+   //   //     enemy->addComponent<CTransform>(pos, eVel);
+
+   //   // }
+   //   // if (enemyType == Enemies::Predator) {
+   //   //     // Do something specific for the Rusher enemy type
+   //   //     enemySpeed = -200;
+   //   //     eVel = normalize(eVel);
+   //   //     eVel = eVel * enemySpeed;
+   //   //     pos = sf::Vector2f(view.x + 100.f, view.y / 3);
+   //   //     enemy->addComponent<CBoundingBox>(sf::Vector2f(50.f, 45.f));
+   //   //     enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Predator]));
+   //   //     enemy->addComponent<CTransform>(pos, eVel);
+   //   //     auto& eRotation = enemy->getComponent<CAnimation>().animation.getSprite();
+   //   //     eRotation.setRotation(90.f);
+   //   //    
+
+   //   // }
+
+   //    //if (enemyType == Enemies::Assault) {
+   //    //    // Do something specific for the Assault enemy type
+   //    //    enemySpeed = -200;
+   //    //    eVel = normalize(eVel);
+   //    //    eVel = eVel * enemySpeed;
+   //    //    pos = sf::Vector2f(view.x + 100.f, view.y / 3);
+   //    //    enemy->addComponent<CBoundingBox>(sf::Vector2f(37.f, 38.f));
+   //    //    enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Assault]));
+   //    //    enemy->addComponent<CTransform>(pos, eVel);
+   //    //    auto& eRotation = enemy->getComponent<CAnimation>().animation.getSprite();
+   //    //    
+
+
+   //    //}
+
+   //}
 }
 
 
@@ -306,7 +446,13 @@ void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
     SoundPlayer::getInstance().removeStoppedSounds();
     m_entityManager.update();
     m_worldView.move( m_config.scrollSpeed * dt.asSeconds() * 1, 0.f);
-
+    
+    spawnTimer += dt;
+    if (spawnTimer >= spawnInterval) {
+        spawnEnemy();
+        spawnTimer = sf::seconds(0.f);
+        spawnInterval = sf::seconds(spawnIntervalDistribution(rng));
+    }
 
     if (m_isPaused)
         return;
