@@ -17,7 +17,7 @@ struct LevelConfig {
     float       enemySpeed{ 200.f };
     float       bulletSpeed{ 400.f };
     float       missileSpeed{ 150.f };
-    sf::Time    fireInterfal{ sf::seconds(5) };
+    sf::Time    fireInterfal{ sf::seconds(1) };
 
     std::map<std::string,
     std::vector<std::pair<float, sf::Time>>> directions;
@@ -31,6 +31,7 @@ private:
     sf::View        m_worldView;
     sf::FloatRect   m_worldBounds;
     LevelConfig     m_config;
+
     enum Enemies
     {
         Rusher,
@@ -60,7 +61,7 @@ private:
     void            sCollisions();
     void            sUpdate(sf::Time dt);
     void            sAnimation(sf::Time dt);
-
+    void            sGunUpdate(sf::Time dt);
     void	        onEnd() override;
 
 
@@ -71,9 +72,8 @@ private:
     void	        registerActions();
     void            spawnPlayer();
     void            spawnEnemy();
-    
-
-
+    void            fireBullets();
+    void            spawnBullet(sf::Vector2f pos, bool isEnemy);
     void            init();
     void            loadLevel(const std::string& path);
     sf::FloatRect   getViewBounds();

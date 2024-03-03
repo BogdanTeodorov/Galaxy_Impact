@@ -104,6 +104,15 @@ struct COccupied : public Component {
     COccupied(bool& occupied):isOccupied(occupied){}
 };
 
+struct CGun : public Component {
+    bool isFiring{ false };
+    sf::Time countdown{ sf::Time::Zero };
+    int fireRate{ 1 };
+    //int spreadLevel{ 1 };
+
+    CGun() = default;
+};
+
 
 struct CInput : public Component
 {
