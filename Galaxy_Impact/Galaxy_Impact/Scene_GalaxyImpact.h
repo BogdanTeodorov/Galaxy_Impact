@@ -62,6 +62,7 @@ private:
     void            sUpdate(sf::Time dt);
     void            sAnimation(sf::Time dt);
     void            sGunUpdate(sf::Time dt);
+    void            sGuideMissiles(sf::Time dt);
     void	        onEnd() override;
 
 
@@ -73,6 +74,8 @@ private:
     void            spawnPlayer();
     void            spawnEnemy();
     void            fireBullets();
+    void            fireMissile();
+    sf::Vector2f    findClosestEnemy(sf::Vector2f mPos);
     void            spawnBullet(sf::Vector2f pos, bool isEnemy);
     void            init();
     void            loadLevel(const std::string& path);

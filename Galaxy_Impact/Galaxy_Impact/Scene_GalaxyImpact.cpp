@@ -90,6 +90,7 @@ void Scene_GalaxyImpact::registerActions() {
     registerAction(sf::Keyboard::S, "DOWN");
     registerAction(sf::Keyboard::Down, "DOWN");
     registerAction(sf::Keyboard::Enter, "FIRE");
+    registerAction(sf::Keyboard::Space, "LAUNCH");
 }
 
 
@@ -282,6 +283,7 @@ void Scene_GalaxyImpact::sDoAction(const Command& action) {
         else if (action.name() == "DOWN") { m_player->getComponent<CInput>().down = true; }
         //fire weapons
         else if (action.name() == "FIRE") { fireBullets(); }
+        else if (action.name() == "LAUNCH") { fireMissile(); }
     }
     
     // on Key Release
@@ -309,6 +311,7 @@ void Scene_GalaxyImpact::spawnPlayer() {
     m_player->addComponent<CState>().state = "grounded";
     m_player->addComponent<CInput>();
     m_player->addComponent<CGun>();
+    m_player->addComponent<CMissiles>();
     m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("mc"));
 }
 
@@ -318,6 +321,7 @@ void Scene_GalaxyImpact::fireBullets()
         m_player->getComponent<CGun>().isFiring = true;
     }
 }
+
 void Scene_GalaxyImpact::spawnBullet(sf::Vector2f pos, bool isEnemy)
 {
     float speed;
@@ -342,6 +346,64 @@ void Scene_GalaxyImpact::spawnBullet(sf::Vector2f pos, bool isEnemy)
 
 
 }
+
+sf::Vector2f Scene_GalaxyImpact::findClosestEnemy(sf::Vector2f mPos)
+{
+    float closest = std::numeric_limits<float>::max();
+    bool isEnemy;
+    sf::Vector2f posClosest{ 0.f, 0.f };
+    for (auto e : m_entityManager.getEntities()) {
+        isEnemy = (e->getTag() == enemyNames[Assault] || e->getTag() == enemyNames[Predator] || e->getTag() == enemyNames[Rusher]);
+        if (isEnemy && e->getComponent<CTransform>().has) {
+            auto ePos = e->getComponent<CTransform>().pos;
+            float distToEnemy = dist(mPos, ePos);
+            if (distToEnemy < closest) {
+                closest = distToEnemy;
+                posClosest = ePos;
+            }
+        }
+    }
+    return posClosest;
+}
+
+void Scene_GalaxyImpact::sGuideMissiles(sf::Time dt)
+{
+    const float approachRate = 500.f;
+    for (auto e : m_entityManager.getEntities("missile")) {
+        if (e->getComponent<CTransform>().has) {
+            auto& tfm = e->getComponent<CTransform>();
+            auto ePos = findClosestEnemy(tfm.pos);
+
+            auto targetDir = normalize(ePos - tfm.pos);
+            tfm.vel = m_config.missileSpeed * normalize(approachRate * dt.asSeconds() * targetDir + tfm.vel);
+            tfm.angle = bearing(tfm.vel) + 90;
+        }
+    }
+
+}
+
+void Scene_GalaxyImpact::fireMissile()
+{
+    if (m_player->hasComponent<CMissiles>()) {
+        size_t& ammo = m_player->getComponent<CMissiles>().missileCount;
+        if (ammo > 0) {
+            ammo -= 1;
+            auto pos = m_player->getComponent<CTransform>().pos;
+
+            auto missile = m_entityManager.addEntity("missile");
+            missile->addComponent<CTransform>(
+                pos + sf::Vector2f(0.f, -60.f),
+                sf::Vector2f(m_config.missileSpeed, 0.f));
+            auto bb = missile->addComponent<CAnimation>(Assets::getInstance()
+                .getAnimation("missile")).animation.getBB();
+            missile->addComponent<CBoundingBox>(bb);
+            auto& mRotation = missile->getComponent<CAnimation>().animation.getSprite();
+            mRotation.setRotation(-90.f);
+           // SoundPlayer::getInstance().play("LaunchMissile", pos);
+        }
+    }
+}
+
 void Scene_GalaxyImpact::spawnEnemy()
 {
    float enemySpeed = 0.f;
@@ -554,6 +616,7 @@ void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
     sCollisions();
     adjustPlayerPosition();
     sRender();
+    sGuideMissiles(dt);
     sGunUpdate(dt);
 }
 

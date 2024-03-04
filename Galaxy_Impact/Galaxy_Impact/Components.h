@@ -113,6 +113,11 @@ struct CGun : public Component {
     CGun() = default;
 };
 
+struct CMissiles : public Component {
+    size_t    missileCount{ 15 };
+
+    CMissiles() = default;
+};
 
 struct CInput : public Component
 {
