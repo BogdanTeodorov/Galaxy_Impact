@@ -146,6 +146,10 @@ void Scene_GalaxyImpact::playerMovement() {
 void Scene_GalaxyImpact::sRender() {
     m_game->window().setView(m_worldView);
 
+    
+
+    
+
     // draw bkg first
     for (auto e : m_entityManager.getEntities("bkg")) {
         if (e->getComponent<CSprite>().has) {
@@ -163,12 +167,20 @@ void Scene_GalaxyImpact::sRender() {
     m_game->window().draw(scoreT);*/
 
     //// draw Lives
-    //static sf::Text livesT("Lives ", Assets::getInstance().getFont("Arcade"), 20);
-    //std::string livesStr = "Lives " + std::to_string(m_lives);
-    //livesT.setString(livesStr);
-    //livesT.setFillColor(sf::Color::Red);
-    //livesT.setPosition(400.f, 0.f);
-    //m_game->window().draw(livesT);
+    auto& pHealth = m_player->getComponent<CHealth>().hp;
+    sf::View view = m_game->window().getView();
+
+    // Get the position of the top-left corner of the view
+    sf::Vector2f viewTopLeft = view.getCenter() - view.getSize() / 2.f;
+
+    // Calculate the position of the text relative to the view
+    sf::Vector2f textPosition = viewTopLeft + sf::Vector2f(10.f, 10.f);
+    static sf::Text livesT("Lives ", Assets::getInstance().getFont("Arcade"), 20);
+    std::string livesStr = "Health " + std::to_string(pHealth) + " HP";
+    livesT.setString(livesStr);
+    livesT.setFillColor(sf::Color::Red);
+    livesT.setPosition(viewTopLeft);
+    m_game->window().draw(livesT);
 
     // draw win Screen
 
@@ -287,8 +299,6 @@ void Scene_GalaxyImpact::sDoAction(const Command& action) {
     }
     
     // on Key Release
-    // the frog can only go in one direction at a time, no angles
-    // use a bitset and exclusive setting.
     else if (action.type() == "END") {
         if (action.name() == "LEFT") { m_player->getComponent<CInput>().left = false; }
         else if (action.name() == "RIGHT") { m_player->getComponent<CInput>().right = false; }
@@ -308,10 +318,11 @@ void Scene_GalaxyImpact::spawnPlayer() {
     m_player = m_entityManager.addEntity("player");
     m_player->addComponent<CTransform>(pos);
     m_player->addComponent<CBoundingBox>(sf::Vector2f(60.f, 36.f));
-    m_player->addComponent<CState>().state = "grounded";
+    m_player->addComponent<CState>().state = "flying";
     m_player->addComponent<CInput>();
     m_player->addComponent<CGun>();
     m_player->addComponent<CMissiles>();
+    m_player->addComponent<CHealth>(100);
     m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("mc"));
 }
 
@@ -438,6 +449,7 @@ void Scene_GalaxyImpact::spawnEnemy()
               auto bb = enemy->getComponent<CAnimation>().animation.getBB();
               enemy->addComponent<CBoundingBox>(sf::Vector2f(bb));
               enemy->addComponent<CTransform>(pos, eVel);
+              enemy->addComponent<CHealth>(10);
 
 
           }
@@ -455,6 +467,7 @@ void Scene_GalaxyImpact::spawnEnemy()
               enemy->addComponent<CGun>();
               enemy->addComponent<CTransform>(pos, eVel);
               auto& eRotation = enemy->getComponent<CAnimation>().animation.getSprite();
+              enemy->addComponent<CHealth>(20);
               eRotation.setRotation(90.f);
           }
           else if (enemyType == Enemies::Predator) {
@@ -467,6 +480,7 @@ void Scene_GalaxyImpact::spawnEnemy()
               auto bb = enemy->getComponent<CAnimation>().animation.getBB();
               enemy->addComponent<CBoundingBox>(sf::Vector2f(bb));
               enemy->addComponent<CGun>();
+              enemy->addComponent<CHealth>(30);
               enemy->addComponent<CTransform>(pos, eVel);
           }
       }
@@ -483,6 +497,8 @@ void Scene_GalaxyImpact::spawnEnemy()
               auto bb = enemy->getComponent<CAnimation>().animation.getBB();
               enemy->addComponent<CBoundingBox>(sf::Vector2f(bb));
               enemy->addComponent<CTransform>(pos, eVel);
+              enemy->addComponent<CHealth>(10);
+
 
 
           }
@@ -498,6 +514,7 @@ void Scene_GalaxyImpact::spawnEnemy()
               auto bb = enemy->getComponent<CAnimation>().animation.getBB();
               enemy->addComponent<CBoundingBox>(sf::Vector2f(bb));
               enemy->addComponent<CTransform>(pos, eVel);
+              enemy->addComponent<CHealth>(20);
 
               auto& eRotation = enemy->getComponent<CAnimation>().animation.getSprite();
               eRotation.setRotation(90.f);
@@ -514,6 +531,8 @@ void Scene_GalaxyImpact::spawnEnemy()
               auto bb = enemy->getComponent<CAnimation>().animation.getBB();
               enemy->addComponent<CBoundingBox>(sf::Vector2f(bb));
               enemy->addComponent<CTransform>(pos, eVel);
+              enemy->addComponent<CHealth>(30);
+
           }
 
       }

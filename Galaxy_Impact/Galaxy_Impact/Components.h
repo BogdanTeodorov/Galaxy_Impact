@@ -113,6 +113,13 @@ struct CGun : public Component {
     CGun() = default;
 };
 
+struct CHealth : public Component {
+    int         hp{ 1 };
+
+    CHealth() = default;
+    CHealth(int hp) : hp(hp) {}
+};
+
 struct CMissiles : public Component {
     size_t    missileCount{ 15 };
 
