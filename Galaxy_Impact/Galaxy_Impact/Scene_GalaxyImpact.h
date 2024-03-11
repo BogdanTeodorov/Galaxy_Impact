@@ -70,6 +70,7 @@ private:
     void            playerMovement();
     void            adjustPlayerPosition();
     void            checkPlayerState();
+    void            checkShipCollisions();
     void	        registerActions();
     void            spawnPlayer();
     void            spawnEnemy();

@@ -581,10 +581,53 @@ sf::FloatRect Scene_GalaxyImpact::getViewBounds() {
 
 void Scene_GalaxyImpact::sCollisions() {
     adjustPlayerPosition();
+    checkShipCollisions();
 
 
 }
 
+void Scene_GalaxyImpact::checkShipCollisions()
+{
+    //player vs rusher
+    for (auto e : m_entityManager.getEntities(enemyNames[Rusher])) {
+
+        auto overlap = Physics::getOverlap(m_player, e);
+
+        if (overlap.x > 0 and overlap.y > 0) {
+            m_player->destroy();
+            e->destroy();
+            spawnPlayer();
+        }
+
+    }
+
+    //player vs assault
+    for (auto e : m_entityManager.getEntities(enemyNames[Assault])) {
+
+        auto overlap = Physics::getOverlap(m_player, e);
+
+        if (overlap.x > 0 and overlap.y > 0) {
+            m_player->destroy();
+            e->destroy();
+            spawnPlayer();
+        }
+
+    }
+
+    // player vs Predator
+    for (auto e : m_entityManager.getEntities(enemyNames[Predator])) {
+
+        auto overlap = Physics::getOverlap(m_player, e);
+
+        if (overlap.x > 0 and overlap.y > 0) {
+            m_player->destroy();
+            e->destroy();
+            spawnPlayer();
+        }
+
+    }
+
+}
 
 void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
     SoundPlayer::getInstance().removeStoppedSounds();
