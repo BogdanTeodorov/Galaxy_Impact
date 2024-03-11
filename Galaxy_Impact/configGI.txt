@@ -38,7 +38,7 @@ Animation       boss-missile	Entities    8        no
 Animation       bullet		Entities    8        no
 Animation       ebullet-v1	Entities    8        no
 Animation       ebullet-v2	Entities    8        no
-Animation       explosion 	Entities    8        no
+Animation       explosion	Entities    8        no
 Animation       laser		Entities    8        no
 Animation       laser-beam	Entities    8        no
 Animation       laser-pickup	Entities    8        no

@@ -335,7 +335,6 @@ void Scene_GalaxyImpact::spawnBullet(sf::Vector2f pos, bool isEnemy)
         /*SoundPlayer::getInstance().play("AlliedGunfire", pos);*/
     }
     auto bullet = m_entityManager.addEntity(isEnemy ? "EnemyBullet" : "PlayerBullet");
-   // auto [txtName, txtRect] = Assets::getInstance().getSprt(isEnemy ? "EnemyBullet" : "PlayerBullet");
     auto bb = isEnemy ? bullet->addComponent<CAnimation>(Assets::getInstance().getAnimation("ebullet-v1")).animation.getBB():
     bullet->addComponent<CAnimation>(Assets::getInstance().getAnimation("bullet")).animation.getBB();
     if (!isEnemy) {
@@ -582,7 +581,7 @@ sf::FloatRect Scene_GalaxyImpact::getViewBounds() {
 void Scene_GalaxyImpact::sCollisions() {
     adjustPlayerPosition();
     checkShipCollisions();
-
+    checkBulletCollison();
 
 }
 
@@ -600,7 +599,6 @@ void Scene_GalaxyImpact::checkShipCollisions()
         }
 
     }
-
     //player vs assault
     for (auto e : m_entityManager.getEntities(enemyNames[Assault])) {
 
@@ -613,7 +611,6 @@ void Scene_GalaxyImpact::checkShipCollisions()
         }
 
     }
-
     // player vs Predator
     for (auto e : m_entityManager.getEntities(enemyNames[Predator])) {
 
@@ -626,6 +623,68 @@ void Scene_GalaxyImpact::checkShipCollisions()
         }
 
     }
+}
+
+void Scene_GalaxyImpact::checkBulletCollison()
+{
+    //Player bullets vs enemies
+    for (auto bullet : m_entityManager.getEntities("PlayerBullet")) {
+        for (auto e : m_entityManager.getEntities(enemyNames[Predator])) {
+
+            auto overlap = Physics::getOverlap(bullet, e);
+
+            if (overlap.x > 0 and overlap.y > 0) {
+               
+               bullet->destroy();
+               e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+               e->destroy();
+            }
+
+        }
+
+        for (auto e : m_entityManager.getEntities(enemyNames[Rusher])) {
+
+            auto overlap = Physics::getOverlap(bullet, e);
+
+            if (overlap.x > 0 and overlap.y > 0) {
+
+                bullet->destroy();
+                e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+                e->destroy();
+            }
+
+        }
+
+        for (auto e : m_entityManager.getEntities(enemyNames[Assault])) {
+
+            auto overlap = Physics::getOverlap(bullet, e);
+
+            if (overlap.x > 0 and overlap.y > 0) {
+
+                bullet->destroy();
+                e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+                e->destroy();
+            }
+
+        }
+
+
+    }
+
+    // Enemy bullets vs player
+    for (auto eBullet : m_entityManager.getEntities("EnemyBullet")) {
+        auto overlap = Physics::getOverlap(m_player, eBullet);
+        
+        if (overlap.x > 0 and overlap.y > 0) {
+
+            m_player->destroy();
+            eBullet->destroy();
+            spawnPlayer();
+        }
+    }
+
+
+
 
 }
 
