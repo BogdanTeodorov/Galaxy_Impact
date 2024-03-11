@@ -72,6 +72,7 @@ private:
     void            checkPlayerState();
     void            checkShipCollisions();
     void            checkBulletCollison();
+    void            checkMissileCollision();
     void	        registerActions();
     void            spawnPlayer();
     void            spawnEnemy();

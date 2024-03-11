@@ -582,6 +582,7 @@ void Scene_GalaxyImpact::sCollisions() {
     adjustPlayerPosition();
     checkShipCollisions();
     checkBulletCollison();
+    checkMissileCollision();
 
 }
 
@@ -686,6 +687,39 @@ void Scene_GalaxyImpact::checkBulletCollison()
 
 
 
+}
+
+void Scene_GalaxyImpact::checkMissileCollision()
+{
+    for (auto missile : m_entityManager.getEntities("missile")) {
+
+        // missile vs rusher
+        for (auto e : m_entityManager.getEntities(enemyNames[Rusher])) {
+            auto overlap = Physics::getOverlap(missile, e);
+            if (overlap.x > 0 and overlap.y > 0) {
+                missile->destroy();
+                e->destroy();
+            }
+        }
+
+        // missile vs predator
+        for (auto e : m_entityManager.getEntities(enemyNames[Predator])) {
+            auto overlap = Physics::getOverlap(missile, e);
+            if (overlap.x > 0 and overlap.y > 0) {
+                missile->destroy();
+                e->destroy();
+            }
+        }
+
+        // missile vs assault
+        for (auto e : m_entityManager.getEntities(enemyNames[Assault])) {
+            auto overlap = Physics::getOverlap(missile, e);
+            if (overlap.x > 0 and overlap.y > 0) {
+                missile->destroy();
+                e->destroy();
+            }
+        }
+    }
 }
 
 void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
