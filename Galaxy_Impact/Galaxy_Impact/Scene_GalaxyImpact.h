@@ -69,6 +69,7 @@ private:
     // helper functions
     void            playerMovement();
     void            adjustPlayerPosition();
+    void            adjustEnemyPosition();
     void            checkPlayerState();
     void            checkShipCollisions();
     void            checkBulletCollison();
@@ -82,7 +83,7 @@ private:
     void            spawnBullet(sf::Vector2f pos, bool isEnemy);
     void            init();
     void            loadLevel(const std::string& path);
-    sf::FloatRect   getViewBounds();
+    void            getViewBounds();
 
 public:
 
@@ -97,3 +98,5 @@ public:
 
 
 #endif //BREAKOUT_SCENE_BREAKOUT_H
+
+void getViewBounds();

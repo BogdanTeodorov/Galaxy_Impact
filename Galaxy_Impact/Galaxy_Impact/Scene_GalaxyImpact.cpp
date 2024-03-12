@@ -593,12 +593,10 @@ void Scene_GalaxyImpact::spawnEnemy()
 }
 
 
-sf::FloatRect Scene_GalaxyImpact::getViewBounds() {
-    return sf::FloatRect();
-}
 
 void Scene_GalaxyImpact::sCollisions() {
     adjustPlayerPosition();
+    adjustEnemyPosition();
     checkShipCollisions();
     checkBulletCollison();
     checkMissileCollision();
@@ -770,6 +768,7 @@ void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
     sMovement(dt);
     sCollisions();
     adjustPlayerPosition();
+    adjustEnemyPosition();
     sRender();
     sGuideMissiles(dt);
     sGunUpdate(dt);
@@ -833,6 +832,40 @@ void Scene_GalaxyImpact::sAnimation(sf::Time dt) {
 
 }
 
+void Scene_GalaxyImpact::adjustEnemyPosition()
+{
+    auto center = m_worldView.getCenter();
+    sf::Vector2f viewHalfSize = m_worldView.getSize() / 2.f;
+  
+    auto top = center.y - viewHalfSize.y;
+    auto bot = center.y + viewHalfSize.y;
+
+    for (auto& e : m_entityManager.getEntities(enemyNames[Rusher])) {
+        auto& ePos = e->getComponent<CTransform>().pos;
+        auto halfSize = sf::Vector2f{ e->getComponent<CBoundingBox>().halfSize.x, e->getComponent<CBoundingBox>().halfSize.y };
+
+        ePos.y = std::max(ePos.y, top + halfSize.y);
+        ePos.y = std::min(ePos.y, bot - halfSize.y);
+    }
+
+    for (auto& e : m_entityManager.getEntities(enemyNames[Assault])) {
+        auto& ePos = e->getComponent<CTransform>().pos;
+        auto halfSize = sf::Vector2f{ e->getComponent<CBoundingBox>().halfSize.x, e->getComponent<CBoundingBox>().halfSize.y };
+       
+        ePos.y = std::max(ePos.y, top + halfSize.y);
+        ePos.y = std::min(ePos.y, bot - halfSize.y);
+    }
+
+    for (auto& e : m_entityManager.getEntities(enemyNames[Predator])) {
+        auto& ePos = e->getComponent<CTransform>().pos;
+        auto halfSize = sf::Vector2f{ e->getComponent<CBoundingBox>().halfSize.x, e->getComponent<CBoundingBox>().halfSize.y };
+      
+        ePos.y = std::max(ePos.y, top + halfSize.y);
+        ePos.y = std::min(ePos.y, bot - halfSize.y);
+    }
+
+
+}
 
 void Scene_GalaxyImpact::adjustPlayerPosition() {
     auto center = m_worldView.getCenter();
