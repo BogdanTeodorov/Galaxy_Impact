@@ -10,6 +10,7 @@
 #include "Entity.h"
 #include "Scene.h"
 #include "GameEngine.h"
+#include "Scene_Menu.h"
 
 struct LevelConfig {
     float       scrollSpeed{ 100.f };
@@ -17,7 +18,8 @@ struct LevelConfig {
     float       enemySpeed{ 200.f };
     float       bulletSpeed{ 400.f };
     float       missileSpeed{ 150.f };
-    sf::Time    fireInterfal{ sf::seconds(1) };
+    sf::Time    fireInterval{ sf::seconds(1) };
+    std::vector<std::string> levelPaths;
 
     std::map<std::string,
     std::vector<std::pair<float, sf::Time>>> directions;
@@ -83,8 +85,7 @@ private:
     void            spawnBullet(sf::Vector2f pos, bool isEnemy);
     void            init();
     void            loadLevel(const std::string& path);
-    void            getViewBounds();
-
+    void            assaultMovement();
 public:
 
     Scene_GalaxyImpact(GameEngine* gameEngine, const std::string& levelPath);
@@ -99,4 +100,3 @@ public:
 
 #endif //BREAKOUT_SCENE_BREAKOUT_H
 
-void getViewBounds();

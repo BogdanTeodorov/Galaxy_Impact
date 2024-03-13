@@ -11,6 +11,7 @@ Music missionTheme      ../assets/Music/tweener.ogg
 
 # Textures
 Texture Background      ../assets/Textures/background.jpg
+Texture Background2      ../assets/Textures/background2.jpg
 Texture Title           ../assets/Textures/FroggerTitle.png
 Texture Entities        ../assets/Textures/Galaxy_Impact-Sprite-Sheet-no-tags.png
 # Sprites

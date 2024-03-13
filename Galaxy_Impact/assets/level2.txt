@@ -1,0 +1,6 @@
+# Level 2
+
+
+
+ScrollSpeed 20
+Bkg Background2 0 0

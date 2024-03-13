@@ -25,12 +25,11 @@ void Scene_Menu:: init()
 	registerAction(sf::Keyboard::Escape,	"QUIT");
 
 	m_title = "Galaxy Impact";
-	m_menuStrings.push_back("Level 1");
-	m_menuStrings.push_back("Level 2");
-	m_menuStrings.push_back("Level 3");
+	m_menuStrings.push_back("Start");
+	m_menuStrings.push_back("Quit");
 
 	m_levelPaths.push_back("../assets/level1.txt");
-	m_levelPaths.push_back("../assets/level1.txt");
+	m_levelPaths.push_back("../assets/level2.txt");
 	m_levelPaths.push_back("../assets/level1.txt");
 
 	m_menuText.setFont(Assets::getInstance().getFont("main"));

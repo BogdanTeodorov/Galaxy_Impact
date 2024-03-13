@@ -16,7 +16,9 @@
 #include "SoundPlayer.h"
 #include <random>
 #include <set>
+#include <vector>
 #include<algorithm>
+#include "Scene_Menu.h"
 
 namespace {
     std::random_device rd;
@@ -28,6 +30,9 @@ sf::Time spawnInterval;
 sf::Time spawnTimer;
 sf::Vector2f enemyPrevPos;
 int bugedEnemiesCount{ 0 };
+bool sortedUp;
+int lvlIndex{ 0 };
+sf::Time changeSceneTime;
 
 
 
@@ -37,14 +42,13 @@ Scene_GalaxyImpact::Scene_GalaxyImpact(GameEngine* gameEngine, const std::string
 {
     loadLevel(levelPath);
     registerActions();
-    
 
 
     //MusicPlayer::getInstance().play("gameTheme");
     //MusicPlayer::getInstance().setVolume(50);
 
     init();
-
+    
 }
 
 
@@ -53,14 +57,18 @@ Scene_GalaxyImpact::Scene_GalaxyImpact(GameEngine* gameEngine, const std::string
 void Scene_GalaxyImpact::init() {
    
     enemyPrevPos = sf::Vector2f(0.f, 0.f);
+    changeSceneTime = sf::seconds(0.f);
     spawnPlayer();
-    // Randomly determine the time interval between spawns
+    m_config.levelPaths.push_back("../assets/level1.txt");
+    m_config.levelPaths.push_back("../assets/level2.txt");
     spawnInterval = sf::seconds(spawnIntervalDistribution(rng));
     spawnTimer = sf::seconds(0.f);
+    sortedUp = false;
 }
 
 void Scene_GalaxyImpact::sMovement(sf::Time dt) {
     playerMovement();
+    assaultMovement();
 
     // move all objects
     for (auto e : m_entityManager.getEntities()) {
@@ -258,7 +266,7 @@ void Scene_GalaxyImpact::sGunUpdate(sf::Time dt)
             //
             if (gun.isFiring && gun.countdown < sf::Time::Zero) {
                 gun.isFiring = false;
-                gun.countdown = m_config.fireInterfal / (1.f + gun.fireRate);
+                gun.countdown = m_config.fireInterval / (1.f + gun.fireRate);
 
                 auto pos = e->getComponent<CTransform>().pos;
             
@@ -270,6 +278,36 @@ void Scene_GalaxyImpact::sGunUpdate(sf::Time dt)
             }
             
         }
+    }
+}
+
+void Scene_GalaxyImpact:: assaultMovement()
+{
+    
+    auto& viewBounds = m_worldView.getCenter();
+    
+    for (auto& p : m_entityManager.getEntities(enemyNames[Assault]))
+    {
+        auto pos = p->getComponent<CTransform>().pos;
+        auto halfSize = p->getComponent<CBoundingBox>().halfSize;
+        auto& state = p->getComponent<CState>().state;
+        auto& pVel = p->getComponent<CTransform>().vel;
+           
+      if (viewBounds.y * 2 <= pos.y + halfSize.y /*&& state == "down"*/) {
+
+                pVel.y *= -1;
+               /* state = "up";*/
+
+      }
+      else if(viewBounds.y /viewBounds.y >= pos.y - halfSize.y/* && state == "up"*/) {
+
+                pVel.y *= -1;
+                //state = "down";
+                //std::cout << "Assault speed: " << pVel.y << "\n";
+      }
+
+        
+        
     }
 }
 
@@ -417,6 +455,7 @@ void Scene_GalaxyImpact::fireMissile()
 void Scene_GalaxyImpact::spawnEnemy()
 {
    float enemySpeed = 0.f;
+   float assaultSpeed = 50.f;
    auto& viewH = m_worldView.getCenter();
    auto& viewV = m_worldView.getSize();
 
@@ -437,7 +476,7 @@ void Scene_GalaxyImpact::spawnEnemy()
       const std::string& enemyName = enemyNames[enemyType];
 
       auto enemy = m_entityManager.addEntity(enemyName); // Add entity 
-      if (enemyPrevPos.y == 0 || (enemyPrevPos.y - pos.y) > std::abs(40.f)) {
+      if (enemyPrevPos.y == 0 || std::abs(enemyPrevPos.y - pos.y) > 40.f) {
           if (enemyType == Enemies::Rusher) {
               // Customize Rusher enemy
               pos.x = (viewH.x * 2);
@@ -455,17 +494,18 @@ void Scene_GalaxyImpact::spawnEnemy()
           }
           else if (enemyType == Enemies::Assault) {
               // Customize Assault enemy
-              enemySpeed = -200;
+              auto aVel = sf::Vector2f(1.f, 1.f);
+              enemySpeed = -100;
               // Add additional customization if needed
-              eVel = normalize(eVel);
-              eVel = eVel * enemySpeed;
-              
+              aVel.x = aVel.x * enemySpeed;
+              aVel.y = -aVel.y * assaultSpeed;
               enemy->addComponent<CGun>();
               enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Predator]));
               auto bb = enemy->getComponent<CAnimation>().animation.getBB();
               enemy->addComponent<CBoundingBox>(sf::Vector2f(bb));
               enemy->addComponent<CGun>();
-              enemy->addComponent<CTransform>(pos, eVel);
+              enemy->addComponent<CState>("up");
+              enemy->addComponent<CTransform>(pos, aVel);
               auto& eRotation = enemy->getComponent<CAnimation>().animation.getSprite();
               enemy->addComponent<CHealth>(20);
               eRotation.setRotation(90.f);
@@ -486,35 +526,30 @@ void Scene_GalaxyImpact::spawnEnemy()
       }
       else {
 
-          if (enemyType == Enemies::Rusher) {
-              // Customize Rusher enemy
-              pos.x = (viewH.x * 2) + 50.f;
-              pos.y = m_player->getComponent<CTransform>().pos.y;
-              enemySpeed = -800;
-              eVel = normalize(eVel);
-              eVel = eVel * enemySpeed;
-              enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Rusher]));
-              auto bb = enemy->getComponent<CAnimation>().animation.getBB();
-              enemy->addComponent<CBoundingBox>(sf::Vector2f(bb));
-              enemy->addComponent<CTransform>(pos, eVel);
-              enemy->addComponent<CHealth>(10);
-
-
-
-          }
-          else if (enemyType == Enemies::Assault) {
+          if (enemyType == Enemies::Assault) {
               // Customize Assault enemy
-              enemySpeed = -200;
-              pos.y += 200.f;
+              enemySpeed = -100;
+              if (!sortedUp) {
+                  pos.y -= 200.f;
+                  sortedUp = true;
+              }
+              else
+              {
+                  pos.y += 200.f;
+                  sortedUp = false;
+              }
+              
               // Add additional customization if needed
-              eVel = normalize(eVel);
-              eVel = eVel * enemySpeed;
+              auto aVel = sf::Vector2f(1.f, 1.f);
+              aVel.x = aVel.x * enemySpeed;
+              aVel.y = -aVel.y * assaultSpeed;
               enemy->addComponent<CGun>();
               enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Predator]));
               auto bb = enemy->getComponent<CAnimation>().animation.getBB();
               enemy->addComponent<CBoundingBox>(sf::Vector2f(bb));
-              enemy->addComponent<CTransform>(pos, eVel);
+              enemy->addComponent<CTransform>(pos, aVel);
               enemy->addComponent<CHealth>(20);
+              enemy->addComponent<CState>("up");
 
               auto& eRotation = enemy->getComponent<CAnimation>().animation.getSprite();
               eRotation.setRotation(90.f);
@@ -523,7 +558,16 @@ void Scene_GalaxyImpact::spawnEnemy()
               // Customize Predator enemy
               // Add additional customization if needed
               enemySpeed = -200;
-              pos.y += 200.f;
+
+              if (!sortedUp) {
+                  pos.y -= 200.f;
+                  sortedUp = true;
+              }
+              else
+              {
+                 pos.y += 200.f;
+                 sortedUp = false;
+              }
               eVel = normalize(eVel);
               eVel = eVel * enemySpeed;
               enemy->addComponent<CGun>();
@@ -683,10 +727,7 @@ void Scene_GalaxyImpact::checkBulletCollison()
                 e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
                 e->destroy();
             }
-
         }
-
-
     }
 
     // Enemy bullets vs player
@@ -700,10 +741,6 @@ void Scene_GalaxyImpact::checkBulletCollison()
             spawnPlayer();
         }
     }
-
-
-
-
 }
 
 void Scene_GalaxyImpact::checkMissileCollision()
@@ -744,11 +781,19 @@ void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
     m_entityManager.update();
     m_worldView.move( m_config.scrollSpeed * dt.asSeconds() * 1, 0.f);
     spawnTimer += dt;
+    changeSceneTime += dt;
     if (spawnTimer >= spawnInterval) {
         spawnTimer = sf::seconds(0.f);
         spawnEnemy();
         spawnInterval = sf::seconds(spawnIntervalDistribution(rng));
     }
+    // change level scene basic logic
+
+    //if (changeSceneTime >= sf::seconds(10.f)) {
+    //    lvlIndex++;
+    //    m_game->changeScene("Level2", std::make_shared<Scene_GalaxyImpact>(m_game, m_config.levelPaths[lvlIndex]));
+    //    //
+    //}
     // fixing bug where some enemy entities have positive velocity
     for (auto e : m_entityManager.getEntities()) {
         bool isEnemy = (e->getTag() == enemyNames[Rusher] || e->getTag() == enemyNames[Assault] || e->getTag() == enemyNames[Assault]);
