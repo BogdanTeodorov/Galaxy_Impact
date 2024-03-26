@@ -113,6 +113,15 @@ struct CGun : public Component {
     CGun() = default;
 };
 
+struct CLaser : public Component {
+
+    bool isShooting{ false };
+    int laserCharge{ 100 };
+    int chargeCost{ 1 };
+    CLaser() = default;
+    CLaser(int laserCharge) : laserCharge(laserCharge){ };
+};
+
 struct CHealth : public Component {
     int         hp{ 1 };
 
@@ -141,6 +150,7 @@ struct CInput : public Component
     bool left{ false };
     bool right{ false };
     bool down{ false };
+    bool fire{ false };
 
     CInput() = default;
 };

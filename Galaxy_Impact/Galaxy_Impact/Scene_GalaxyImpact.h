@@ -75,10 +75,12 @@ private:
     void            checkPlayerState();
     void            checkShipCollisions();
     void            checkBulletCollison();
+    void            checkLaserCollision();
     void            checkMissileCollision();
     void	        registerActions();
     void            spawnPlayer();
     void            spawnEnemy();
+    void            spawnLaser(sf::Vector2f pos);
     void            fireBullets();
     void            fireMissile();
     sf::Vector2f    findClosestEnemy(sf::Vector2f mPos);

@@ -80,6 +80,14 @@ void Scene_GalaxyImpact::sMovement(sf::Time dt) {
             tfm.angle += tfm.angVel * dt.asSeconds();
         }
     }
+
+    for (auto l : m_entityManager.getEntities("laser")) {
+       auto& lpos = l->getComponent<CTransform>().pos;
+       auto ppos = m_player->getComponent<CTransform>().pos;
+       lpos.x = ppos.x + 400.f;
+       lpos.y = ppos.y;
+
+    }
 }
 
 
@@ -111,7 +119,6 @@ void Scene_GalaxyImpact::playerMovement() {
     if (m_player->hasComponent<CState>() && m_player->getComponent<CState>().state == "dead")
         return;
 
-    /*auto& dir = m_player->getComponent<CInput>().dir;*/
     auto& vel = m_player->getComponent<CTransform>().vel;
     auto& input = m_player->getComponent<CInput>();
     float pSpeed = 200.f;
@@ -153,7 +160,7 @@ void Scene_GalaxyImpact::playerMovement() {
 
 void Scene_GalaxyImpact::sRender() {
     m_game->window().setView(m_worldView);
-
+    sf::View view = m_game->window().getView();
     
 
     
@@ -174,9 +181,49 @@ void Scene_GalaxyImpact::sRender() {
     scoreT.setPosition(0.f, 0.f);
     m_game->window().draw(scoreT);*/
 
+    // draw Laser gun ammo
+
+    auto laserAmmo = m_player->getComponent<CLaser>().laserCharge;
+    sf::Vector2f topCenter(view.getCenter().x, 0.f );
+    sf::Vector2f laserTextPos = topCenter + sf::Vector2f(10.f, 10.f);
+    static sf::Text laserText("LaserAmmo ", Assets::getInstance().getFont("Arcade"), 20);
+    std::string laserStr; 
+    
+    if (laserAmmo <= 0) {
+        laserStr = "Laser 0 Energy";
+    }
+    else {
+
+        laserStr = "Laser " + std::to_string(laserAmmo) + " Energy";
+    }
+    laserText.setString(laserStr);
+    laserText.setPosition(laserTextPos);
+    laserText.setFillColor(sf::Color::Green);
+    m_game->window().draw(laserText);
+
+    // draw missile ammo 
+    auto missileAmmo = m_player->getComponent<CMissiles>().missileCount;
+   sf::Vector2f topRight(view.getCenter().x + view.getSize().x / 2.f, 10.f);
+   sf::Vector2f missileTextPos = topRight - sf::Vector2f(200.f, 0.f);
+    static sf::Text missileText("MissileAmmo ", Assets::getInstance().getFont("Arcade"), 20);
+    std::string missileStr;
+    
+    if (missileAmmo <= 0) {
+        missileStr = "Missiles X 0";
+    }
+    else {
+
+        missileStr = "Missiles X " + std::to_string(missileAmmo);
+    }
+    missileText.setString(missileStr);
+    missileText.setPosition(missileTextPos);
+    missileText.setFillColor(sf::Color::Blue);
+    m_game->window().draw(missileText);
+
+
     //// draw Lives
     auto& pHealth = m_player->getComponent<CHealth>().hp;
-    sf::View view = m_game->window().getView();
+    
 
     // Get the position of the top-left corner of the view
     sf::Vector2f viewTopLeft = view.getCenter() - view.getSize() / 2.f;
@@ -187,7 +234,7 @@ void Scene_GalaxyImpact::sRender() {
     std::string livesStr = "Health " + std::to_string(pHealth) + " HP";
     livesT.setString(livesStr);
     livesT.setFillColor(sf::Color::Red);
-    livesT.setPosition(viewTopLeft);
+    livesT.setPosition(textPosition);
     m_game->window().draw(livesT);
 
     // draw win Screen
@@ -293,17 +340,16 @@ void Scene_GalaxyImpact:: assaultMovement()
         auto& state = p->getComponent<CState>().state;
         auto& pVel = p->getComponent<CTransform>().vel;
            
-      if (viewBounds.y * 2 <= pos.y + halfSize.y /*&& state == "down"*/) {
+      if (viewBounds.y * 2 <= pos.y + halfSize.y) {
 
                 pVel.y *= -1;
-               /* state = "up";*/
+               
 
       }
-      else if(viewBounds.y /viewBounds.y >= pos.y - halfSize.y/* && state == "up"*/) {
+      else if(viewBounds.y /viewBounds.y >= pos.y - halfSize.y) {
 
                 pVel.y *= -1;
-                //state = "down";
-                //std::cout << "Assault speed: " << pVel.y << "\n";
+                
       }
 
         
@@ -332,7 +378,10 @@ void Scene_GalaxyImpact::sDoAction(const Command& action) {
         else if (action.name() == "UP") {m_player->getComponent<CInput>().up = true;}
         else if (action.name() == "DOWN") { m_player->getComponent<CInput>().down = true; }
         //fire weapons
-        else if (action.name() == "FIRE") { fireBullets(); }
+        else if (action.name() == "FIRE") {
+            m_player->getComponent<CInput>().fire = true;
+            fireBullets(); 
+        }
         else if (action.name() == "LAUNCH") { fireMissile(); }
     }
     
@@ -342,7 +391,13 @@ void Scene_GalaxyImpact::sDoAction(const Command& action) {
         else if (action.name() == "RIGHT") { m_player->getComponent<CInput>().right = false; }
         else if (action.name() == "UP") { m_player->getComponent<CInput>().up = false; }
         else if (action.name() == "DOWN") { m_player->getComponent<CInput>().down = false; }
-       /* else if (action.name() == "FIRE") { m_player->getComponent<CGun>().isFiring = false; }*/
+        else if (action.name() == "FIRE") { 
+            m_player->getComponent<CLaser>().isShooting = false;
+            m_player->getComponent<CInput>().fire = false;
+            for (auto& l : m_entityManager.getEntities("laser")) {
+                l->destroy();
+            }
+        }
     }
 }
 
@@ -361,16 +416,48 @@ void Scene_GalaxyImpact::spawnPlayer() {
     m_player->addComponent<CGun>();
     m_player->addComponent<CMissiles>();
     m_player->addComponent<CHealth>(100);
+    m_player->addComponent<CLaser>();
     m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("mc"));
 }
 
 void Scene_GalaxyImpact::fireBullets()
 {
-    if (m_player->hasComponent<CGun>()) {
+    auto laserCharge = m_player->getComponent<CLaser>().laserCharge;
+    auto chargeCost = m_player->getComponent<CLaser>().chargeCost;
+    auto pos = m_player->getComponent<CTransform>().pos;
+    sf::Vector2f laserPos(pos.x, pos.y);
+    if (m_player->hasComponent<CGun>() && laserCharge <=0) {
         m_player->getComponent<CGun>().isFiring = true;
+        m_player->getComponent<CLaser>().isShooting = false;
+
+        for (auto& l : m_entityManager.getEntities("laser")) {
+            l->destroy();
+        }
+
+    }
+    else 
+    {
+        m_player->getComponent<CGun>().isFiring = false;
+        m_player->getComponent<CLaser>().isShooting = true;
+
+        if (m_player->getComponent<CLaser>().isShooting = true) {
+            spawnLaser(laserPos);
+            //laserCharge -= chargeCost;
+
+        }
+        
     }
 }
+void Scene_GalaxyImpact::spawnLaser(sf::Vector2f pos)
+{
+    auto lvel = m_player->getComponent<CTransform>().vel;
+    auto laser = m_entityManager.addEntity("laser");
+    auto bb = laser->addComponent<CAnimation>(Assets::getInstance().getAnimation("laser-beam")).animation.getBB();
+    laser->addComponent<CBoundingBox>(bb);
+    laser->addComponent<CTransform>(pos, lvel);
+    laser->addComponent<CInput>();
 
+}
 void Scene_GalaxyImpact::spawnBullet(sf::Vector2f pos, bool isEnemy)
 {
     float speed;
@@ -489,6 +576,8 @@ void Scene_GalaxyImpact::spawnEnemy()
               enemy->addComponent<CBoundingBox>(sf::Vector2f(bb));
               enemy->addComponent<CTransform>(pos, eVel);
               enemy->addComponent<CHealth>(10);
+              enemy->addComponent<CState>();
+
 
 
           }
@@ -504,11 +593,13 @@ void Scene_GalaxyImpact::spawnEnemy()
               auto bb = enemy->getComponent<CAnimation>().animation.getBB();
               enemy->addComponent<CBoundingBox>(sf::Vector2f(bb));
               enemy->addComponent<CGun>();
-              enemy->addComponent<CState>("up");
+              enemy->addComponent<CState>();
               enemy->addComponent<CTransform>(pos, aVel);
               auto& eRotation = enemy->getComponent<CAnimation>().animation.getSprite();
               enemy->addComponent<CHealth>(20);
               eRotation.setRotation(90.f);
+              enemy->addComponent<CState>();
+
           }
           else if (enemyType == Enemies::Predator) {
               // Customize Predator enemy
@@ -522,6 +613,8 @@ void Scene_GalaxyImpact::spawnEnemy()
               enemy->addComponent<CGun>();
               enemy->addComponent<CHealth>(30);
               enemy->addComponent<CTransform>(pos, eVel);
+              enemy->addComponent<CState>();
+
           }
       }
       else {
@@ -549,7 +642,7 @@ void Scene_GalaxyImpact::spawnEnemy()
               enemy->addComponent<CBoundingBox>(sf::Vector2f(bb));
               enemy->addComponent<CTransform>(pos, aVel);
               enemy->addComponent<CHealth>(20);
-              enemy->addComponent<CState>("up");
+              enemy->addComponent<CState>();
 
               auto& eRotation = enemy->getComponent<CAnimation>().animation.getSprite();
               eRotation.setRotation(90.f);
@@ -576,6 +669,8 @@ void Scene_GalaxyImpact::spawnEnemy()
               enemy->addComponent<CBoundingBox>(sf::Vector2f(bb));
               enemy->addComponent<CTransform>(pos, eVel);
               enemy->addComponent<CHealth>(30);
+              enemy->addComponent<CState>();
+
 
           }
 
@@ -644,6 +739,7 @@ void Scene_GalaxyImpact::sCollisions() {
     checkShipCollisions();
     checkBulletCollison();
     checkMissileCollision();
+    checkLaserCollision();
 
 }
 
@@ -742,7 +838,38 @@ void Scene_GalaxyImpact::checkBulletCollison()
         }
     }
 }
+void Scene_GalaxyImpact::checkLaserCollision()
+{
+    for (auto laser : m_entityManager.getEntities("laser")) {
 
+        //laser vs rusher
+        for (auto e : m_entityManager.getEntities(enemyNames[Rusher])) {
+            auto overlap = Physics::getOverlap(laser, e);
+            if (overlap.x > 0 and overlap.y > 0) {
+                laser->destroy();
+                e->destroy();
+            }
+        }
+
+        // missile vs predator
+        for (auto e : m_entityManager.getEntities(enemyNames[Predator])) {
+            auto overlap = Physics::getOverlap(laser, e);
+            if (overlap.x > 0 and overlap.y > 0) {
+                laser->destroy();
+                e->destroy();
+            }
+        }
+
+        // missile vs assault
+        for (auto e : m_entityManager.getEntities(enemyNames[Assault])) {
+            auto overlap = Physics::getOverlap(laser, e);
+            if (overlap.x > 0 and overlap.y > 0) {
+                laser->destroy();
+                e->destroy();
+            }
+        }
+    }
+}
 void Scene_GalaxyImpact::checkMissileCollision()
 {
     for (auto missile : m_entityManager.getEntities("missile")) {
@@ -782,11 +909,21 @@ void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
     m_worldView.move( m_config.scrollSpeed * dt.asSeconds() * 1, 0.f);
     spawnTimer += dt;
     changeSceneTime += dt;
+    
+    // change laser charge amount
+    auto& laserCharge = m_player->getComponent<CLaser>().laserCharge;
+    auto chargeCost = m_player->getComponent<CLaser>().chargeCost;
+    if (m_player->getComponent<CLaser>().isShooting == true && m_player->getComponent<CInput>().fire == true) {
+        laserCharge -= chargeCost;
+    }
+
     if (spawnTimer >= spawnInterval) {
         spawnTimer = sf::seconds(0.f);
         spawnEnemy();
         spawnInterval = sf::seconds(spawnIntervalDistribution(rng));
     }
+    
+   
     // change level scene basic logic
 
     //if (changeSceneTime >= sf::seconds(10.f)) {
