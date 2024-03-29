@@ -118,7 +118,7 @@ struct CGun : public Component {
 struct CLaser : public Component {
 
     bool isShooting{ false };
-    long laserCharge{ 100 };
+    long laserCharge{ 0 };
     int laserDamage{ 0 };
     int chargeCost{ 1 };
     CLaser() = default;
@@ -135,7 +135,7 @@ struct CHealth : public Component {
 };
 
 struct CMissiles : public Component {
-    size_t    missileCount{ 15 };
+    size_t    missileCount{ 3 };
     int missileDamage{ 0 };
     CMissiles() = default;
     CMissiles(size_t missleCount_) :missileCount(missleCount_) {}

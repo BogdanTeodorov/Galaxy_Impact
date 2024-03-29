@@ -78,6 +78,7 @@ private:
     void            checkBulletCollison();
     void            checkLaserCollision();
     void            checkMissileCollision();
+    void            checkPickupCollisions();
     void	        registerActions();
     void            spawnPlayer();
     void            spawnEnemy();
@@ -92,6 +93,7 @@ private:
     void            destroyBulletsOutsideBattlefield();
     void            destroyEnemiesOutsideBattleField();
     void            destroyMissilesOutsideBattleField();
+    void            dropPickup(sf::Vector2f pos);
 public:
 
     Scene_GalaxyImpact(GameEngine* gameEngine, const std::string& levelPath);

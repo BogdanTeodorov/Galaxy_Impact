@@ -33,6 +33,7 @@ int bugedEnemiesCount{ 0 };
 bool sortedUp;
 int lvlIndex{ 0 };
 sf::Time changeSceneTime;
+int deathCount;
 
 
 
@@ -56,6 +57,7 @@ Scene_GalaxyImpact::Scene_GalaxyImpact(GameEngine* gameEngine, const std::string
 
 void Scene_GalaxyImpact::init() {
    
+    deathCount = 0;
     enemyPrevPos = sf::Vector2f(0.f, 0.f);
     changeSceneTime = sf::seconds(0.f);
     spawnPlayer();
@@ -446,6 +448,25 @@ void Scene_GalaxyImpact::destroyMissilesOutsideBattleField()
             e->destroy();
         }
     }
+}
+
+void Scene_GalaxyImpact::dropPickup(sf::Vector2f pos)
+{
+    static const std::string pickups[] = { "power-charge", "missile-pickup", "laser-pickup" };
+    std::uniform_int_distribution<int> d1(1, 3);
+    std::uniform_int_distribution<int> d2(0, 2);
+    
+    if (d1(rng) < 2)  // 2/3 chance to drop a pickup
+    {
+        auto pickup = pickups[d2(rng)];
+        auto p = m_entityManager.addEntity("Pickup");
+        p->addComponent<CTransform>(pos);
+        auto bb = p->addComponent<CAnimation>(Assets::getInstance()
+            .getAnimation(pickup)).animation.getBB();
+        p->addComponent<CBoundingBox>(bb);
+    }
+
+    
 }
 
 void Scene_GalaxyImpact::update(sf::Time dt) {
@@ -851,6 +872,7 @@ void Scene_GalaxyImpact::sCollisions() {
     checkBulletCollison();
     checkMissileCollision();
     checkLaserCollision();
+    checkPickupCollisions();
 
 }
 
@@ -1166,6 +1188,44 @@ void Scene_GalaxyImpact::checkMissileCollision()
     }
 }
 
+void Scene_GalaxyImpact::checkPickupCollisions()
+{
+    for (auto e : m_entityManager.getEntities("Pickup")) {
+
+        // player collids with pickup;
+        auto overlap = Physics::getOverlap(m_player, e);
+        if (overlap.x > 0 and overlap.y > 0) {
+            auto name = e->getComponent<CAnimation>().animation.m_name;
+            if (name == "power-charge") {
+
+                m_player->getComponent<CHealth>().hp += 40;
+               
+                if (m_player->getComponent<CHealth>().hp >= 100) {
+
+                    m_player->getComponent<CHealth>().hp = 100;
+                }
+                
+                
+            }
+            if (name == "missile-pickup") m_player->getComponent<CMissiles>().missileCount += 3;
+
+            if (name == "laser-pickup") {
+
+                m_player->getComponent<CLaser>().laserCharge += 40;
+                if (m_player->getComponent<CLaser>().laserCharge >= 100) {
+
+                    m_player->getComponent<CLaser>().laserCharge = 100;
+                }
+                
+            }
+
+            e->destroy();
+
+        }
+
+    }
+}
+
 void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
     SoundPlayer::getInstance().removeStoppedSounds();
     m_entityManager.update();
@@ -1240,10 +1300,16 @@ void Scene_GalaxyImpact::sAnimation(sf::Time dt) {
             anim.animation.update(dt);
             if (playerAnim.animation.hasEnded() and state == "dead") {
                 m_player->destroy();
+                deathCount++;
                 spawnPlayer();
+                if (deathCount > 0) {
+                    m_player->getComponent<CMissiles>().missileCount = 0;
+                }
 
             }
             if (isEnemy && eAnimation.hasEnded() and eState == "dead") {
+                auto pos = e->getComponent<CTransform>().pos;
+                dropPickup(pos);
                 e->destroy();
             }
 
