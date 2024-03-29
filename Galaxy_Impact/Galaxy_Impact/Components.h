@@ -105,21 +105,26 @@ struct COccupied : public Component {
 };
 
 struct CGun : public Component {
+    int gunDamage{ 0 };
     bool isFiring{ false };
     sf::Time countdown{ sf::Time::Zero };
     int fireRate{ 1 };
     //int spreadLevel{ 1 };
 
     CGun() = default;
+    CGun(int gunDamage_):gunDamage(gunDamage_){}
 };
 
 struct CLaser : public Component {
 
     bool isShooting{ false };
-    int laserCharge{ 100 };
+    long laserCharge{ 100 };
+    int laserDamage{ 0 };
     int chargeCost{ 1 };
     CLaser() = default;
-    CLaser(int laserCharge) : laserCharge(laserCharge){ };
+    CLaser(int laserDamage_) : laserDamage(laserDamage_) {}
+    CLaser(long laserCharge_) : laserCharge(laserCharge_) {}
+    CLaser(long laserCharge_, int laserDamage_) : laserCharge(laserCharge_), laserDamage(laserDamage_) {}
 };
 
 struct CHealth : public Component {
@@ -131,8 +136,12 @@ struct CHealth : public Component {
 
 struct CMissiles : public Component {
     size_t    missileCount{ 15 };
-
+    int missileDamage{ 0 };
     CMissiles() = default;
+    CMissiles(size_t missleCount_) :missileCount(missleCount_) {}
+    CMissiles(int missleDmage_) :missileDamage(missleDmage_) {}
+    CMissiles(size_t missleCount_, int missileDamage_) :missileCount(missleCount_), missileDamage(missileDamage_) {}
+
 };
 
 struct CInput : public Component

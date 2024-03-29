@@ -407,16 +407,19 @@ void Scene_GalaxyImpact::spawnPlayer() {
     auto pos = m_worldView.getSize();
     pos.x = 0.f;
     pos.y = pos.y / 2;
-    
+    int gunDamage = 25;
+    int missileDamage = 50;
+    int laserDamage = 50;
+
     m_player = m_entityManager.addEntity("player");
     m_player->addComponent<CTransform>(pos);
     m_player->addComponent<CBoundingBox>(sf::Vector2f(60.f, 36.f));
     m_player->addComponent<CState>().state = "flying";
     m_player->addComponent<CInput>();
-    m_player->addComponent<CGun>();
-    m_player->addComponent<CMissiles>();
+    m_player->addComponent<CGun>(gunDamage);
+    m_player->addComponent<CMissiles>(missileDamage);
     m_player->addComponent<CHealth>(100);
-    m_player->addComponent<CLaser>();
+    m_player->addComponent<CLaser>(laserDamage);
     m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("mc"));
 }
 
@@ -478,6 +481,18 @@ void Scene_GalaxyImpact::spawnBullet(sf::Vector2f pos, bool isEnemy)
     }
     bullet->addComponent<CBoundingBox>(bb);
     bullet->addComponent<CTransform>(pos, sf::Vector2f(speed, 0.f));
+    if (isEnemy) {
+        for (auto e : m_entityManager.getEntities() ){
+           if(e->getTag()== enemyNames[Assault])
+            bullet->addComponent<CState>("assaultBullet");
+           else if (e->getTag() == enemyNames[Predator]) {
+               bullet->addComponent<CState>("predatorBullet");
+           }
+        }
+
+        
+        
+    }
 
 
 }
@@ -561,6 +576,7 @@ void Scene_GalaxyImpact::spawnEnemy()
       Enemies enemyType = static_cast<Enemies>(enemyTypeDistribution(rng));
       auto pos = sf::Vector2f((viewH.x*2) + 100.f, viewV.y / enemyVerticalSpawnRange(rng));
       const std::string& enemyName = enemyNames[enemyType];
+      int gunDamage;
 
       auto enemy = m_entityManager.addEntity(enemyName); // Add entity 
       if (enemyPrevPos.y == 0 || std::abs(enemyPrevPos.y - pos.y) > 40.f) {
@@ -585,6 +601,7 @@ void Scene_GalaxyImpact::spawnEnemy()
               // Customize Assault enemy
               auto aVel = sf::Vector2f(1.f, 1.f);
               enemySpeed = -100;
+              gunDamage = 35;
               // Add additional customization if needed
               aVel.x = aVel.x * enemySpeed;
               aVel.y = -aVel.y * assaultSpeed;
@@ -592,11 +609,11 @@ void Scene_GalaxyImpact::spawnEnemy()
               enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Predator]));
               auto bb = enemy->getComponent<CAnimation>().animation.getBB();
               enemy->addComponent<CBoundingBox>(sf::Vector2f(bb));
-              enemy->addComponent<CGun>();
+              enemy->addComponent<CGun>(gunDamage);
               enemy->addComponent<CState>();
               enemy->addComponent<CTransform>(pos, aVel);
               auto& eRotation = enemy->getComponent<CAnimation>().animation.getSprite();
-              enemy->addComponent<CHealth>(20);
+              enemy->addComponent<CHealth>(35);
               eRotation.setRotation(90.f);
               enemy->addComponent<CState>();
 
@@ -604,14 +621,15 @@ void Scene_GalaxyImpact::spawnEnemy()
           else if (enemyType == Enemies::Predator) {
               // Customize Predator enemy
               // Add additional customization if needed
+              gunDamage = 25;
               enemySpeed = -200;
               eVel = normalize(eVel);
               eVel = eVel * enemySpeed;
               enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Assault]));
               auto bb = enemy->getComponent<CAnimation>().animation.getBB();
               enemy->addComponent<CBoundingBox>(sf::Vector2f(bb));
-              enemy->addComponent<CGun>();
-              enemy->addComponent<CHealth>(30);
+              enemy->addComponent<CGun>(gunDamage);
+              enemy->addComponent<CHealth>(25);
               enemy->addComponent<CTransform>(pos, eVel);
               enemy->addComponent<CState>();
 
@@ -633,15 +651,16 @@ void Scene_GalaxyImpact::spawnEnemy()
               }
               
               // Add additional customization if needed
+              gunDamage = 35;
               auto aVel = sf::Vector2f(1.f, 1.f);
               aVel.x = aVel.x * enemySpeed;
               aVel.y = -aVel.y * assaultSpeed;
-              enemy->addComponent<CGun>();
+              enemy->addComponent<CGun>(gunDamage);
               enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Predator]));
               auto bb = enemy->getComponent<CAnimation>().animation.getBB();
               enemy->addComponent<CBoundingBox>(sf::Vector2f(bb));
               enemy->addComponent<CTransform>(pos, aVel);
-              enemy->addComponent<CHealth>(20);
+              enemy->addComponent<CHealth>(35);
               enemy->addComponent<CState>();
 
               auto& eRotation = enemy->getComponent<CAnimation>().animation.getSprite();
@@ -651,6 +670,7 @@ void Scene_GalaxyImpact::spawnEnemy()
               // Customize Predator enemy
               // Add additional customization if needed
               enemySpeed = -200;
+              gunDamage = 25;
 
               if (!sortedUp) {
                   pos.y -= 200.f;
@@ -663,12 +683,12 @@ void Scene_GalaxyImpact::spawnEnemy()
               }
               eVel = normalize(eVel);
               eVel = eVel * enemySpeed;
-              enemy->addComponent<CGun>();
+              enemy->addComponent<CGun>(gunDamage);
               enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Assault]));
               auto bb = enemy->getComponent<CAnimation>().animation.getBB();
               enemy->addComponent<CBoundingBox>(sf::Vector2f(bb));
               enemy->addComponent<CTransform>(pos, eVel);
-              enemy->addComponent<CHealth>(30);
+              enemy->addComponent<CHealth>(25);
               enemy->addComponent<CState>();
 
 
@@ -745,15 +765,36 @@ void Scene_GalaxyImpact::sCollisions() {
 
 void Scene_GalaxyImpact::checkShipCollisions()
 {
+    auto& pHealth = m_player->getComponent<CHealth>().hp;
+    auto& pState = m_player->getComponent<CState>().state;
+  
     //player vs rusher
     for (auto e : m_entityManager.getEntities(enemyNames[Rusher])) {
 
         auto overlap = Physics::getOverlap(m_player, e);
+        auto& eHealth = e->getComponent<CHealth>().hp;
+        auto& eState = e->getComponent<CState>().state;
 
         if (overlap.x > 0 and overlap.y > 0) {
-            m_player->destroy();
+           /* m_player->destroy();
             e->destroy();
-            spawnPlayer();
+            spawnPlayer();*/
+            pHealth -= pHealth;
+            eHealth -= eHealth;
+            if (pHealth <= 0) {
+                pState = "dead";
+                m_player->removeComponent<CBoundingBox>();
+                m_player->removeComponent<CInput>();
+                m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+
+            }
+            if (eHealth <= 0) {
+                eState = "dead";
+                e->removeComponent<CBoundingBox>();
+                e->removeComponent<CInput>();
+                e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+
+            }
         }
 
     }
@@ -761,11 +802,25 @@ void Scene_GalaxyImpact::checkShipCollisions()
     for (auto e : m_entityManager.getEntities(enemyNames[Assault])) {
 
         auto overlap = Physics::getOverlap(m_player, e);
+        auto& eHealth = e->getComponent<CHealth>().hp;
+        auto& eState = e->getComponent<CState>().state;
 
         if (overlap.x > 0 and overlap.y > 0) {
-            m_player->destroy();
-            e->destroy();
-            spawnPlayer();
+            pHealth -= pHealth;
+            eHealth -= eHealth;
+            if (pHealth <= 0) {
+                pState = "dead";
+                m_player->removeComponent<CBoundingBox>();
+                m_player->removeComponent<CInput>();
+                m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+
+            }
+            if (eHealth <= 0) {
+                eState = "dead";
+                e->removeComponent<CBoundingBox>();
+                e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+
+            }
         }
 
     }
@@ -773,11 +828,25 @@ void Scene_GalaxyImpact::checkShipCollisions()
     for (auto e : m_entityManager.getEntities(enemyNames[Predator])) {
 
         auto overlap = Physics::getOverlap(m_player, e);
+        auto& eHealth = e->getComponent<CHealth>().hp;
+        auto& eState = e->getComponent<CState>().state;
 
         if (overlap.x > 0 and overlap.y > 0) {
-            m_player->destroy();
-            e->destroy();
-            spawnPlayer();
+            pHealth -= pHealth;
+            eHealth -= eHealth;
+            if (pHealth <= 0) {
+                pState = "dead";
+                m_player->removeComponent<CBoundingBox>();
+                m_player->removeComponent<CInput>();
+                m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+
+            }
+            if (eHealth <= 0) {
+                eState = "dead";
+                e->removeComponent<CBoundingBox>();
+                e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+
+            }
         }
 
     }
@@ -785,119 +854,222 @@ void Scene_GalaxyImpact::checkShipCollisions()
 
 void Scene_GalaxyImpact::checkBulletCollison()
 {
+    auto& pHealth = m_player->getComponent<CHealth>().hp;
+    auto pGunDmg = m_player->getComponent<CGun>().gunDamage;
+    auto& pState = m_player->getComponent<CState>().state;
+
     //Player bullets vs enemies
     for (auto bullet : m_entityManager.getEntities("PlayerBullet")) {
         for (auto e : m_entityManager.getEntities(enemyNames[Predator])) {
 
+            auto& eHealth = e->getComponent<CHealth>().hp;
             auto overlap = Physics::getOverlap(bullet, e);
+            auto& eState = e->getComponent<CState>().state;
 
             if (overlap.x > 0 and overlap.y > 0) {
                
                bullet->destroy();
-               e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
-               e->destroy();
+               eHealth -= pGunDmg;
+
+               if (eHealth <= 0) {
+                   eState = "dead";
+                   e->removeComponent<CBoundingBox>();
+                   e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+               }
+               
             }
 
         }
 
         for (auto e : m_entityManager.getEntities(enemyNames[Rusher])) {
 
+            auto& eHealth = e->getComponent<CHealth>().hp;
             auto overlap = Physics::getOverlap(bullet, e);
+            auto& eState = e->getComponent<CState>().state;
 
             if (overlap.x > 0 and overlap.y > 0) {
 
                 bullet->destroy();
-                e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
-                e->destroy();
-            }
+                eHealth -= pGunDmg;
 
+                if (eHealth <= 0) {
+                    eState = "dead";
+                    e->removeComponent<CBoundingBox>();
+                    e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+                }
+
+            }
         }
 
         for (auto e : m_entityManager.getEntities(enemyNames[Assault])) {
 
+            auto& eHealth = e->getComponent<CHealth>().hp;
             auto overlap = Physics::getOverlap(bullet, e);
+            auto& eState = e->getComponent<CState>().state;
 
             if (overlap.x > 0 and overlap.y > 0) {
 
                 bullet->destroy();
-                e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
-                e->destroy();
+                eHealth -= pGunDmg;
+
+                if (eHealth <= 0) {
+                    eState = "dead";
+                    e->removeComponent<CBoundingBox>();
+                    e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+                }
+
             }
         }
     }
 
     // Enemy bullets vs player
     for (auto eBullet : m_entityManager.getEntities("EnemyBullet")) {
+        auto eBulletState = eBullet->getComponent<CState>().state;
         auto overlap = Physics::getOverlap(m_player, eBullet);
+        auto bState = eBullet->getComponent<CState>().state;
         
-        if (overlap.x > 0 and overlap.y > 0) {
 
-            m_player->destroy();
+        if (overlap.x > 0 and overlap.y > 0) {
+            if (bState == "assaultBullet"){ pHealth -= 35; } 
+            else if (bState == "predatorBullet") { pHealth -= 25; }
+
             eBullet->destroy();
-            spawnPlayer();
+            if (pHealth <= 0) {
+                pState = "dead";
+                m_player->removeComponent<CBoundingBox>();
+                m_player->removeComponent<CInput>();
+                m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+
+            }
+
+
         }
     }
 }
+       
+
 void Scene_GalaxyImpact::checkLaserCollision()
 {
+    auto laserDmg = m_player->getComponent<CLaser>().laserDamage;
     for (auto laser : m_entityManager.getEntities("laser")) {
 
         //laser vs rusher
         for (auto e : m_entityManager.getEntities(enemyNames[Rusher])) {
+
+            auto& eHealth = e->getComponent<CHealth>().hp;
+            auto& eState = e->getComponent<CState>().state;
             auto overlap = Physics::getOverlap(laser, e);
+
             if (overlap.x > 0 and overlap.y > 0) {
-                laser->destroy();
-                e->destroy();
+                
+                eHealth -= laserDmg;
+
+                if (eHealth <= 0) {
+                    eState = "dead";
+                    e->removeComponent<CBoundingBox>();
+                    e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+                }
             }
         }
 
         // missile vs predator
         for (auto e : m_entityManager.getEntities(enemyNames[Predator])) {
+            auto& eHealth = e->getComponent<CHealth>().hp;
+            auto& eState = e->getComponent<CState>().state;
             auto overlap = Physics::getOverlap(laser, e);
-            if (overlap.x > 0 and overlap.y > 0) {
-                laser->destroy();
-                e->destroy();
-            }
-        }
 
-        // missile vs assault
-        for (auto e : m_entityManager.getEntities(enemyNames[Assault])) {
-            auto overlap = Physics::getOverlap(laser, e);
             if (overlap.x > 0 and overlap.y > 0) {
-                laser->destroy();
-                e->destroy();
+                
+                eHealth -= laserDmg;
+
+                if (eHealth <= 0) {
+                    eState = "dead";
+                    e->removeComponent<CBoundingBox>();
+                    e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+                }
+            }
+
+            // missile vs assault
+            for (auto e : m_entityManager.getEntities(enemyNames[Assault])) {
+                auto& eHealth = e->getComponent<CHealth>().hp;
+                auto& eState = e->getComponent<CState>().state;
+                auto overlap = Physics::getOverlap(laser, e);
+
+                if (overlap.x > 0 and overlap.y > 0) {
+                    
+                    eHealth -= laserDmg;
+
+                    if (eHealth <= 0) {
+                        eState = "dead";
+                        e->removeComponent<CBoundingBox>();
+                        e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+                    }
+                }
             }
         }
     }
 }
 void Scene_GalaxyImpact::checkMissileCollision()
 {
+    auto missileDmg = m_player->getComponent<CMissiles>().missileDamage;
+
     for (auto missile : m_entityManager.getEntities("missile")) {
 
         // missile vs rusher
         for (auto e : m_entityManager.getEntities(enemyNames[Rusher])) {
+            auto& eHealth = e->getComponent<CHealth>().hp;
+            auto& eState = e->getComponent<CState>().state;
             auto overlap = Physics::getOverlap(missile, e);
+
             if (overlap.x > 0 and overlap.y > 0) {
+             
+                eHealth -= missileDmg;
                 missile->destroy();
-                e->destroy();
+
+                if (eHealth <= 0) {
+                    eState = "dead";
+                    e->removeComponent<CBoundingBox>();
+                    e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+                }
             }
         }
 
         // missile vs predator
         for (auto e : m_entityManager.getEntities(enemyNames[Predator])) {
+            auto& eHealth = e->getComponent<CHealth>().hp;
+            auto& eState = e->getComponent<CState>().state;
             auto overlap = Physics::getOverlap(missile, e);
+
             if (overlap.x > 0 and overlap.y > 0) {
+
+                eHealth -= missileDmg;
                 missile->destroy();
-                e->destroy();
+
+                if (eHealth <= 0) {
+                    eState = "dead";
+                    e->removeComponent<CBoundingBox>();
+                    e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+                }
             }
         }
 
         // missile vs assault
         for (auto e : m_entityManager.getEntities(enemyNames[Assault])) {
+            auto& eHealth = e->getComponent<CHealth>().hp;
+            auto& eState = e->getComponent<CState>().state;
             auto overlap = Physics::getOverlap(missile, e);
+
             if (overlap.x > 0 and overlap.y > 0) {
+
+                eHealth -= missileDmg;
                 missile->destroy();
-                e->destroy();
+
+
+                if (eHealth <= 0) {
+                    eState = "dead";
+                    e->removeComponent<CBoundingBox>();
+                    e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+                }
             }
         }
     }
@@ -964,8 +1136,9 @@ void Scene_GalaxyImpact::sAnimation(sf::Time dt) {
 
 
     for (auto e : m_entityManager.getEntities()) {
-
-
+        auto eAnimation = e->getComponent<CAnimation>().animation;
+        bool isEnemy = (e->getTag() == enemyNames[Assault] || e->getTag() == enemyNames[Predator] || e->getTag() == enemyNames[Rusher]);
+        auto eState = e->getComponent<CState>().state;
         // update all animations
         if (e->hasComponent<CAnimation>()) {
             auto& anim = e->getComponent<CAnimation>();
@@ -974,6 +1147,9 @@ void Scene_GalaxyImpact::sAnimation(sf::Time dt) {
                 m_player->destroy();
                 spawnPlayer();
 
+            }
+            if (isEnemy && eAnimation.hasEnded() and eState == "dead") {
+                e->destroy();
             }
 
             for (auto& t : m_entityManager.getEntities("3turtles")) {
