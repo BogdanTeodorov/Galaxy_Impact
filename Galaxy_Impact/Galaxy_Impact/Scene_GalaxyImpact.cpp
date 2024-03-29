@@ -114,6 +114,13 @@ void Scene_GalaxyImpact::onEnd() {
     m_game->changeScene("MENU", nullptr, false);
 }
 
+void Scene_GalaxyImpact::sDestroyOutsideBattleField()
+{
+    destroyBulletsOutsideBattlefield();
+    destroyEnemiesOutsideBattleField();
+    destroyMissilesOutsideBattleField();
+}
+
 void Scene_GalaxyImpact::playerMovement() {
     // no movement if player is dead
     if (m_player->hasComponent<CState>() && m_player->getComponent<CState>().state == "dead")
@@ -317,7 +324,7 @@ void Scene_GalaxyImpact::sGunUpdate(sf::Time dt)
 
                 auto pos = e->getComponent<CTransform>().pos;
             
-                spawnBullet(pos /*+ sf::Vector2f(0.f, isEnemy ? 35.f : -35.f)*/, isEnemy);
+                spawnBullet(pos, isEnemy);
                
                     
 
@@ -354,6 +361,90 @@ void Scene_GalaxyImpact:: assaultMovement()
 
         
         
+    }
+}
+
+void Scene_GalaxyImpact::destroyBulletsOutsideBattlefield()
+{
+    // destroy player bullets outside of the view 
+    for (auto& e : m_entityManager.getEntities("PlayerBullet")) {
+        auto outsideViewPos = m_worldView.getCenter().x * 2 + 50.f;
+        auto bulletPosX = e->getComponent<CTransform>().pos.x;
+
+        if (bulletPosX >= outsideViewPos) {
+            e->destroy();
+            
+        }
+    }
+
+    // destroy enemy bullets outside of the view 
+    for (auto& e : m_entityManager.getEntities("EnemyBullet")) {
+
+        auto outsideViewPos = m_worldView.getCenter().x / m_worldView.getCenter().x - 50.f;
+
+        auto bulletPosX = e->getComponent<CTransform>().pos.x;
+
+        if (bulletPosX <= outsideViewPos) {
+            e->destroy();
+            
+        }
+
+    }
+
+
+
+
+}
+
+void Scene_GalaxyImpact::destroyEnemiesOutsideBattleField()
+{
+    for (auto& e : m_entityManager.getEntities(enemyNames[Assault])) {
+
+        auto outsideViewPos = m_worldView.getCenter().x / m_worldView.getCenter().x - 50.f;
+        auto ePosX = e->getComponent<CTransform>().pos.x;
+
+        if ( ePosX <= outsideViewPos) {
+            e->destroy();
+
+            
+        }
+    }
+
+    for (auto& e : m_entityManager.getEntities(enemyNames[Predator])) {
+
+        auto outsideViewPos = m_worldView.getCenter().x / m_worldView.getCenter().x - 50.f;
+        auto ePosX = e->getComponent<CTransform>().pos.x;
+
+        if (ePosX <= outsideViewPos) {
+            e->destroy();
+
+            
+        }
+    }
+
+    for (auto& e : m_entityManager.getEntities(enemyNames[Rusher])) {
+
+        auto outsideViewPos = m_worldView.getCenter().x / m_worldView.getCenter().x - 50.f;
+        auto ePosX = e->getComponent<CTransform>().pos.x;
+
+        if (ePosX <= outsideViewPos) {
+            e->destroy();
+
+            
+        }
+    }
+}
+
+void Scene_GalaxyImpact::destroyMissilesOutsideBattleField()
+{
+    for (auto& e : m_entityManager.getEntities("missile")) {
+        auto leftOutsidePos = m_worldView.getCenter().x / m_worldView.getCenter().x - 50.f;
+        auto rightOutsidePos = m_worldView.getCenter().x * 2 + 50.f;
+        auto mPosX = e->getComponent<CTransform>().pos.x;
+
+        if (mPosX >= rightOutsidePos or mPosX <= leftOutsidePos) {
+            e->destroy();
+        }
     }
 }
 
@@ -445,7 +536,7 @@ void Scene_GalaxyImpact::fireBullets()
 
         if (m_player->getComponent<CLaser>().isShooting = true) {
             spawnLaser(laserPos);
-            //laserCharge -= chargeCost;
+           
 
         }
         
@@ -1078,7 +1169,7 @@ void Scene_GalaxyImpact::checkMissileCollision()
 void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
     SoundPlayer::getInstance().removeStoppedSounds();
     m_entityManager.update();
-    m_worldView.move( m_config.scrollSpeed * dt.asSeconds() * 1, 0.f);
+    if (!m_isPaused) { m_worldView.move(m_config.scrollSpeed * dt.asSeconds() * 1, 0.f); }
     spawnTimer += dt;
     changeSceneTime += dt;
     
@@ -1115,8 +1206,11 @@ void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
     }
 
 
-    if (m_isPaused)
+    if (m_isPaused) {
+        m_worldView.move(0.f, 0.f);
         return;
+    }
+        
 
     sAnimation(dt);
     sMovement(dt);
@@ -1126,6 +1220,7 @@ void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
     sRender();
     sGuideMissiles(dt);
     sGunUpdate(dt);
+    sDestroyOutsideBattleField();
 }
 
 

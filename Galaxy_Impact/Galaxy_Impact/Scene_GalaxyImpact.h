@@ -66,6 +66,7 @@ private:
     void            sGunUpdate(sf::Time dt);
     void            sGuideMissiles(sf::Time dt);
     void	        onEnd() override;
+    void            sDestroyOutsideBattleField();
 
 
     // helper functions
@@ -88,6 +89,9 @@ private:
     void            init();
     void            loadLevel(const std::string& path);
     void            assaultMovement();
+    void            destroyBulletsOutsideBattlefield();
+    void            destroyEnemiesOutsideBattleField();
+    void            destroyMissilesOutsideBattleField();
 public:
 
     Scene_GalaxyImpact(GameEngine* gameEngine, const std::string& levelPath);
