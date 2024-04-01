@@ -61,6 +61,7 @@ private:
     //systems
     void            sMovement(sf::Time dt);
     void            sCollisions();
+    void            sPlayerInvincibleState(sf::Time dt);
     void            sUpdate(sf::Time dt);
     void            sAnimation(sf::Time dt);
     void            sGunUpdate(sf::Time dt);
@@ -73,6 +74,7 @@ private:
     void            playerMovement();
     void            adjustPlayerPosition();
     void            adjustEnemyPosition();
+    bool            isTransperent(sf::Sprite colorOpacity);
     void            checkPlayerState();
     void            checkShipCollisions();
     void            checkBulletCollison();

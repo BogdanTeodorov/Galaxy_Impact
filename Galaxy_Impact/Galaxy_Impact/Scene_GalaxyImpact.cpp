@@ -33,6 +33,7 @@ int bugedEnemiesCount{ 0 };
 bool sortedUp;
 int lvlIndex{ 0 };
 sf::Time changeSceneTime;
+sf::Time playerInvincibleTime;
 int deathCount;
 
 
@@ -43,7 +44,6 @@ Scene_GalaxyImpact::Scene_GalaxyImpact(GameEngine* gameEngine, const std::string
 {
     loadLevel(levelPath);
     registerActions();
-
 
     //MusicPlayer::getInstance().play("gameTheme");
     //MusicPlayer::getInstance().setVolume(50);
@@ -57,7 +57,9 @@ Scene_GalaxyImpact::Scene_GalaxyImpact(GameEngine* gameEngine, const std::string
 
 void Scene_GalaxyImpact::init() {
    
+    
     deathCount = 0;
+    playerInvincibleTime = sf::seconds(2.f);
     enemyPrevPos = sf::Vector2f(0.f, 0.f);
     changeSceneTime = sf::seconds(0.f);
     spawnPlayer();
@@ -137,21 +139,21 @@ void Scene_GalaxyImpact::playerMovement() {
 
 
     if (input.up) {
-        m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("mc"));
+        /*m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("mc"));*/
         pv.y -= 1.f;
     }
     if (input.down) {
-        m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("mc"));
+        //m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("mc"));
         pv.y += 1.f;
     }
 
     if (input.left) {
-        m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("mc"));
+        //m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("mc"));
         pv.x -=1.f;
     }
 
     if (input.right) {
-        m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("mc"));
+        //m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("mc"));
         pv.x += 1.f;
     }
 
@@ -525,14 +527,16 @@ void Scene_GalaxyImpact::spawnPlayer() {
 
     m_player = m_entityManager.addEntity("player");
     m_player->addComponent<CTransform>(pos);
-    m_player->addComponent<CBoundingBox>(sf::Vector2f(60.f, 36.f));
-    m_player->addComponent<CState>().state = "flying";
+    m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("mc"));
+    auto bb = m_player->getComponent<CAnimation>().animation.getBB();
+    m_player->addComponent<CBoundingBox>(sf::Vector2f(bb));
+    m_player->addComponent<CState>().state = "invincible";
     m_player->addComponent<CInput>();
     m_player->addComponent<CGun>(gunDamage);
     m_player->addComponent<CMissiles>(missileDamage);
     m_player->addComponent<CHealth>(100);
     m_player->addComponent<CLaser>(laserDamage);
-    m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("mc"));
+   
 }
 
 void Scene_GalaxyImpact::fireBullets()
@@ -873,6 +877,55 @@ void Scene_GalaxyImpact::sCollisions() {
     checkMissileCollision();
     checkLaserCollision();
     checkPickupCollisions();
+
+}
+
+void Scene_GalaxyImpact::sPlayerInvincibleState(sf::Time dt)
+{
+    auto textOpacity = m_player->getComponent<CAnimation>().animation.getSprite().getColor().a;
+    auto& pAnimationColor = m_player->getComponent<CAnimation>().animation.getSprite();
+    //auto bb = m_player->addComponent<CAnimation>().animation.getBB();
+    sf::Color fillColor;
+    sf::Color currentColor = pAnimationColor.getColor();
+
+    
+    if (playerInvincibleTime > sf::seconds(0.f) /*and pState == "invincible"*/) {
+        playerInvincibleTime -= dt;
+        if (!isTransperent(pAnimationColor)) {
+            
+          textOpacity = 0;
+          sf::Color newColor(currentColor.r, currentColor.g, currentColor.b, textOpacity);
+          pAnimationColor.setColor(newColor);
+          
+          
+          
+        }
+       
+        else if(isTransperent(pAnimationColor)) {
+
+           
+            textOpacity = 255;
+            sf::Color newColor(currentColor.r, currentColor.g, currentColor.b, textOpacity);
+            pAnimationColor.setColor(newColor);
+            
+
+            
+        }
+        m_player->removeComponent<CBoundingBox>();
+
+        
+
+    }
+    else {
+
+        m_player->addComponent<CBoundingBox>(sf::Vector2f(60.f, 34.f));
+        textOpacity = 255;
+        sf::Color newColor(currentColor.r, currentColor.g, currentColor.b, textOpacity);
+        pAnimationColor.setColor(newColor);
+        
+       
+
+    }
 
 }
 
@@ -1271,8 +1324,8 @@ void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
         return;
     }
         
-
     sAnimation(dt);
+    sPlayerInvincibleState(dt);
     sMovement(dt);
     sCollisions();
     adjustPlayerPosition();
@@ -1299,9 +1352,11 @@ void Scene_GalaxyImpact::sAnimation(sf::Time dt) {
             auto& anim = e->getComponent<CAnimation>();
             anim.animation.update(dt);
             if (playerAnim.animation.hasEnded() and state == "dead") {
+                
                 m_player->destroy();
                 deathCount++;
                 spawnPlayer();
+                playerInvincibleTime = sf::seconds(2.f);
                 if (deathCount > 0) {
                     m_player->getComponent<CMissiles>().missileCount = 0;
                 }
@@ -1335,14 +1390,8 @@ void Scene_GalaxyImpact::sAnimation(sf::Time dt) {
                 else if (!tanim.animation.hasEnded()) {
                     t->addComponent<CBoundingBox>(sf::Vector2f(66.f, 15.f));
                 }
-
-
             }
-
-
         }
-
-
     }
 
 
@@ -1385,6 +1434,14 @@ void Scene_GalaxyImpact::adjustEnemyPosition()
 
 
 }
+
+bool Scene_GalaxyImpact::isTransperent(sf::Sprite colorOpacity)
+{
+   
+    return  colorOpacity.getColor().a == 0;
+}
+
+
 
 void Scene_GalaxyImpact::adjustPlayerPosition() {
     auto center = m_worldView.getCenter();
