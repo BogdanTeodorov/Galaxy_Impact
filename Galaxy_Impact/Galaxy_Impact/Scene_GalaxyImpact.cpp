@@ -884,12 +884,13 @@ void Scene_GalaxyImpact::sPlayerInvincibleState(sf::Time dt)
 {
     auto textOpacity = m_player->getComponent<CAnimation>().animation.getSprite().getColor().a;
     auto& pAnimationColor = m_player->getComponent<CAnimation>().animation.getSprite();
+    auto& pState = m_player->getComponent<CState>().state;
     //auto bb = m_player->addComponent<CAnimation>().animation.getBB();
     sf::Color fillColor;
     sf::Color currentColor = pAnimationColor.getColor();
 
     
-    if (playerInvincibleTime > sf::seconds(0.f) /*and pState == "invincible"*/) {
+    if (playerInvincibleTime > sf::seconds(0.f) and pState == "invincible") {
         playerInvincibleTime -= dt;
         if (!isTransperent(pAnimationColor)) {
             
@@ -916,8 +917,9 @@ void Scene_GalaxyImpact::sPlayerInvincibleState(sf::Time dt)
         
 
     }
-    else {
-
+    else if (playerInvincibleTime <= sf::Time::Zero and pState!="dead") {
+        
+        pState = "flying";
         m_player->addComponent<CBoundingBox>(sf::Vector2f(60.f, 34.f));
         textOpacity = 255;
         sf::Color newColor(currentColor.r, currentColor.g, currentColor.b, textOpacity);
