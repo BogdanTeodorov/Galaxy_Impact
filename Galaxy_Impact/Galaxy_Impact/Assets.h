@@ -1,6 +1,4 @@
-//
-// Created by David Burchill on 2023-10-31.
-//
+
 
 #ifndef BREAKOUT_ASSETS_H
 #define BREAKOUT_ASSETS_H

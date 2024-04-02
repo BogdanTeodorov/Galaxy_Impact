@@ -36,6 +36,8 @@ int deathCount;
 bool canSpawnEnemies;
 sf::Time bossChargeAttackCD;
 sf::Time bossMissileCD = sf::seconds(3.f);
+int planetCount = 0;
+int totalLives = 3;
 
 
 
@@ -45,7 +47,6 @@ Scene_GalaxyImpact::Scene_GalaxyImpact(GameEngine* gameEngine, const std::string
 {
     loadLevel(levelPath);
     registerActions();
-
     //MusicPlayer::getInstance().play("gameTheme");
     //MusicPlayer::getInstance().setVolume(50);
 
@@ -65,6 +66,7 @@ void Scene_GalaxyImpact::init() {
     enemyPrevPos = sf::Vector2f(0.f, 0.f);
     changeSceneTime = sf::seconds(0.f);
     spawnPlayer();
+    renderLives();
     m_config.levelPaths.push_back("../assets/level1.txt");
     m_config.levelPaths.push_back("../assets/level2.txt");
     spawnInterval = sf::seconds(spawnIntervalDistribution(rng));
@@ -116,6 +118,24 @@ void Scene_GalaxyImpact::registerActions() {
     registerAction(sf::Keyboard::Space, "LAUNCH");
 }
 
+void Scene_GalaxyImpact::renderLives()
+{
+    auto view = m_HudView.getCenter();
+
+    for (int i{ 0 }; i < totalLives; i++) {
+
+        auto life = m_entityManager.addEntity("life");
+        auto pos = sf::Vector2f(view.x / 2 + (i * 15), view.y / view.y + 35.f);
+        life->addComponent<CAnimation>(Assets::getInstance().getAnimation("life"));
+        life->addComponent<CTransform>(pos, sf::Vector2f(0.f, 0.f));
+
+        
+    }
+    
+
+
+}
+
 
 void Scene_GalaxyImpact::onEnd() {
     m_game->changeScene("MENU", nullptr, false);
@@ -126,6 +146,7 @@ void Scene_GalaxyImpact::sDestroyOutsideBattleField()
     destroyBulletsOutsideBattlefield();
     destroyEnemiesOutsideBattleField();
     destroyMissilesOutsideBattleField();
+    
 }
 
 void Scene_GalaxyImpact::playerMovement() {
@@ -210,6 +231,8 @@ void Scene_GalaxyImpact::sRender() {
             m_game->window().draw(sprite);
         }
     }
+    
+    
 
     // draw Score
     /*static sf::Text scoreT("Score ", Assets::getInstance().getFont("main"), 20);
@@ -218,9 +241,8 @@ void Scene_GalaxyImpact::sRender() {
     scoreT.setFillColor(sf::Color::Cyan);
     scoreT.setPosition(0.f, 0.f);
     m_game->window().draw(scoreT);*/
-
+    
     // draw Laser gun ammo
-
     auto laserAmmo = m_player->getComponent<CLaser>().laserCharge;
     sf::Vector2f topCenter(view.getCenter().x, 0.f );
     sf::Vector2f laserTextPos = topCenter + sf::Vector2f(10.f, 10.f);
@@ -261,8 +283,6 @@ void Scene_GalaxyImpact::sRender() {
 
     //// draw Lives
     auto& pHealth = m_player->getComponent<CHealth>().hp;
-    
-
     // Get the position of the top-left corner of the view
     sf::Vector2f viewTopLeft = view.getCenter() - view.getSize() / 2.f;
 
@@ -276,6 +296,29 @@ void Scene_GalaxyImpact::sRender() {
     m_game->window().draw(livesT);
 
     // draw win Screen
+
+    for (auto b : m_entityManager.getEntities(bossNames[Lv1Boss])) {
+        auto bstate = b->getComponent<CState>().state;
+        // W scenario
+        if (bstate == "dead" and totalLives > 0) {
+            static sf::Text winnerT("Congratulation", Assets::getInstance().getFont("Arcade"), 35);
+            std::string  winnerStr = "Congratulation!\n Demo Level Completed !!!";
+            winnerT.setString(winnerStr);
+            winnerT.setFillColor(sf::Color::Green);
+            winnerT.setPosition(view.getCenter().x -200, view.getCenter().y);
+            m_game->window().draw(winnerT);
+        }
+        
+       
+    }
+    if (totalLives <= 0) {
+        static sf::Text loseT("Game Over", Assets::getInstance().getFont("Arcade"), 35);
+        std::string  losestr = "Game Over!\n Your Impact\n Was Not\n Good Enough !!!";
+        loseT.setString(losestr);
+        loseT.setFillColor(sf::Color::Red);
+        loseT.setPosition(view.getCenter().x - 200, view.getCenter().y);
+        m_game->window().draw(loseT);
+    }
 
    /* if (lilyCount == 5) {
 
@@ -305,32 +348,66 @@ void Scene_GalaxyImpact::sRender() {
 
 
     }*/
-
+   
+   
+   
+      /* auto Wview = m_worldView.getCenter();
+       
+       for (int i{ 0 }; i < totalLives; i++) {
+           for (auto e : m_entityManager.getEntities("life")) {
+               auto& ePos = e->getComponent<CTransform>().pos;
+               auto pos = sf::Vector2f((Wview.x / 2) + (i * 15), Wview.y / Wview.y + 20.f);
+               ePos = pos;
+               
+           }
+       }*/
+       
+   
+   
     for (auto& e : m_entityManager.getEntities()) {
         if (!e->hasComponent<CAnimation>())
             continue;
+        if (e->getTag() != "life") {
 
-        // Draw Sprite
-        auto& anim = e->getComponent<CAnimation>().animation;
-        auto& tfm = e->getComponent<CTransform>();
-        anim.getSprite().setPosition(tfm.pos);
-        //anim.getSprite().setRotation(tfm.angle);
-        m_game->window().draw(anim.getSprite());
+            // Draw Sprite
+            auto& anim = e->getComponent<CAnimation>().animation;
+            auto& tfm = e->getComponent<CTransform>();
+            anim.getSprite().setPosition(tfm.pos);
+            //anim.getSprite().setRotation(tfm.angle);
+            m_game->window().draw(anim.getSprite());
 
-        if (m_drawAABB) {
-            if (e->hasComponent<CBoundingBox>()) {
-                auto box = e->getComponent<CBoundingBox>();
-                sf::RectangleShape rect;
-                rect.setSize(sf::Vector2f{ box.size.x, box.size.y });
-                centerOrigin(rect);
-                rect.setPosition(e->getComponent<CTransform>().pos);
-                rect.setFillColor(sf::Color(0, 0, 0, 0));
-                rect.setOutlineColor(sf::Color{ 0, 255, 0 });
-                rect.setOutlineThickness(2.f);
-                m_game->window().draw(rect);
+            if (m_drawAABB) {
+                if (e->hasComponent<CBoundingBox>()) {
+                    auto box = e->getComponent<CBoundingBox>();
+                    sf::RectangleShape rect;
+                    rect.setSize(sf::Vector2f{ box.size.x, box.size.y });
+                    centerOrigin(rect);
+                    rect.setPosition(e->getComponent<CTransform>().pos);
+                    rect.setFillColor(sf::Color(0, 0, 0, 0));
+                    rect.setOutlineColor(sf::Color{ 0, 255, 0 });
+                    rect.setOutlineThickness(2.f);
+                    m_game->window().draw(rect);
+                }
             }
         }
     }
+    m_game->window().setView(m_HudView);
+    auto hview = m_game->window().getView();
+    // render here Hud elemnts in the hudview
+     // Render other HUD elements
+    for (auto& e : m_entityManager.getEntities("life")) {
+        if (e->hasComponent<CAnimation>()) {
+            auto& anim = e->getComponent<CAnimation>().animation;
+            auto& tfm = e->getComponent<CTransform>();
+            anim.getSprite().setPosition(tfm.pos);
+            m_game->window().draw(anim.getSprite());
+        }
+    }
+
+    // Switch back to the main view
+    m_game->window().setView(m_worldView);
+
+   
 }
 void Scene_GalaxyImpact::sGunUpdate(sf::Time dt)
 {
@@ -395,6 +472,19 @@ void Scene_GalaxyImpact:: assaultMovement()
         
     }
 }
+void Scene_GalaxyImpact::destroyPickupOutsideBattleField()
+{
+    for (auto& e : m_entityManager.getEntities("Pickup")) {
+        auto outsideViewPos = m_worldView.getCenter().x / m_worldView.getCenter().x - 50.f;
+
+        auto pickupPosX = e->getComponent<CTransform>().pos.x;
+
+        if (pickupPosX <= outsideViewPos) {
+            e->destroy();
+
+        }
+    }
+}
 
 void Scene_GalaxyImpact::destroyBulletsOutsideBattlefield()
 {
@@ -421,6 +511,18 @@ void Scene_GalaxyImpact::destroyBulletsOutsideBattlefield()
             
         }
 
+    }
+
+    for (auto& e : m_entityManager.getEntities("BossBullet")) {
+
+        auto outsideViewPos = m_worldView.getCenter().x / m_worldView.getCenter().x - 50.f;
+
+        auto bulletPosX = e->getComponent<CTransform>().pos.x;
+
+        if (bulletPosX <= outsideViewPos) {
+            e->destroy();
+
+        }
     }
 
 
@@ -486,7 +588,7 @@ void Scene_GalaxyImpact::dropPickup(sf::Vector2f pos)
     std::uniform_int_distribution<int> d1(1, 3);
     std::uniform_int_distribution<int> d2(0, 2);
     
-    if (d1(rng) < 2)  // 2/3 chance to drop a pickup
+    if (d1(rng) < 2)  //chance to drop a pickup
     {
         auto pickup = pickups[d2(rng)];
         auto p = m_entityManager.addEntity("Pickup");
@@ -1109,13 +1211,12 @@ void Scene_GalaxyImpact::checkShipCollisions()
         auto& eState = e->getComponent<CState>().state;
 
         if (overlap.x > 0 and overlap.y > 0) {
-           /* m_player->destroy();
-            e->destroy();
-            spawnPlayer();*/
+          
             pHealth -= pHealth;
             eHealth -= eHealth;
             if (pHealth <= 0) {
                 pState = "dead";
+                totalLives--;
                 m_player->removeComponent<CBoundingBox>();
                 m_player->removeComponent<CInput>();
                 m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
@@ -1146,6 +1247,8 @@ void Scene_GalaxyImpact::checkShipCollisions()
                 m_player->removeComponent<CBoundingBox>();
                 m_player->removeComponent<CInput>();
                 m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+                totalLives--;
+
 
             }
             if (eHealth <= 0) {
@@ -1172,6 +1275,7 @@ void Scene_GalaxyImpact::checkShipCollisions()
                 m_player->removeComponent<CBoundingBox>();
                 m_player->removeComponent<CInput>();
                 m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+                totalLives--;
 
             }
             if (eHealth <= 0) {
@@ -1195,6 +1299,7 @@ void Scene_GalaxyImpact::checkShipCollisions()
                 m_player->removeComponent<CBoundingBox>();
                 m_player->removeComponent<CInput>();
                 m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+                totalLives--;
 
             }
         }
@@ -1319,6 +1424,8 @@ void Scene_GalaxyImpact::checkBulletCollison()
                 m_player->removeComponent<CBoundingBox>();
                 m_player->removeComponent<CInput>();
                 m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+                totalLives--;
+
 
             }
 
@@ -1343,6 +1450,7 @@ void Scene_GalaxyImpact::checkBulletCollison()
                     m_player->removeComponent<CBoundingBox>();
                     m_player->removeComponent<CInput>();
                     m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+                    totalLives--;
 
                 }
             }
@@ -1553,6 +1661,8 @@ void Scene_GalaxyImpact::checkMissileCollision()
                 m_player->removeComponent<CBoundingBox>();
                 m_player->removeComponent<CInput>();
                 m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+                totalLives--;
+
             }
         }
 
@@ -1637,7 +1747,20 @@ void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
        
         
     }
-    
+
+    for (auto b : m_entityManager.getEntities(bossNames[Lv1Boss])) {
+        auto bstate = b->getComponent<CState>().state;
+        // W scenario
+        if (bstate == "dead" and totalLives > 0) {
+            m_isPaused = true;
+        }
+        
+        
+    }
+    // L scenario
+    if (totalLives <= 0) {
+        m_isPaused = true;
+    }
    
     // change level scene basic logic
 
@@ -1662,7 +1785,6 @@ void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
         m_worldView.move(0.f, 0.f);
         return;
     }
-        
     sAnimation(dt);
     sPlayerInvincibleState(dt);
     sMovement(dt);
@@ -1673,6 +1795,7 @@ void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
     sGuideMissiles(dt);
     sGunUpdate(dt);
     sDestroyOutsideBattleField();
+
 }
 
 
@@ -1691,10 +1814,15 @@ void Scene_GalaxyImpact::sAnimation(sf::Time dt) {
             auto& anim = e->getComponent<CAnimation>();
             anim.animation.update(dt);
             if (playerAnim.animation.hasEnded() and state == "dead") {
+               
+                for (auto e : m_entityManager.getEntities("life")) {
+                    e->destroy();
+                }
                 
                 m_player->destroy();
                 deathCount++;
                 spawnPlayer();
+                renderLives();
                 playerInvincibleTime = sf::seconds(2.f);
                 if (deathCount > 0) {
                     m_player->getComponent<CMissiles>().missileCount = 0;
@@ -1898,8 +2026,19 @@ void Scene_GalaxyImpact::loadLevel(const std::string& path) {
             sprite.setOrigin(0.f, 0.f);
             sprite.setPosition(pos);
         }
+        /*if (token == "Plnt") {
+            std::string name;
+            sf::Vector2f pos;
+            config >> name >> pos.x >> pos.y;
+            auto e = m_entityManager.addEntity("Plnt");
+            auto& sprite = e->addComponent<CSprite>(Assets::getInstance().getTexture(name)).sprite;
+            sprite.setOrigin(0.f, 0.f);
+            sprite.setPosition(pos);
+        }*/
         if (token == "ScrollSpeed") {
             config >> m_config.scrollSpeed;
+            
+
         }
         else if (token[0] == '#') {
             std::cout << token;

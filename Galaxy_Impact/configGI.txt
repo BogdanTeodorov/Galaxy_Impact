@@ -12,6 +12,7 @@ Music missionTheme      ../assets/Music/tweener.ogg
 # Textures
 Texture Background      ../assets/Textures/background.jpg
 Texture Background2      ../assets/Textures/background2.jpg
+Texture Palnet-1	../assets/Textures/Planet-1.png
 Texture Title           ../assets/Textures/FroggerTitle.png
 Texture Entities        ../assets/Textures/Galaxy_Impact-Sprite-Sheet-no-tags.png
 # Sprites
@@ -43,8 +44,7 @@ Animation       explosion	Entities    8        no
 Animation       laser		Entities    8        no
 Animation       laser-beam	Entities    8        no
 Animation       laser-pickup	Entities    8        no
-Animation       life		Entities    8        no
-Animation       nolife		Entities    8        no
+Animation       life		Entities    8        yes
 Animation       missile		Entities    8        no
 Animation       missile-pickup	Entities    8        no
 Animation       power-charge	Entities    8        no

@@ -4,4 +4,5 @@ World 480 600
 
 ScrollSpeed 20
 Bkg Background 0 0
+Plnt Palnet-1 0 0
 

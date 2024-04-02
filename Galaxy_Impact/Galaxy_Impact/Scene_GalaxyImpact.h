@@ -31,6 +31,7 @@ class Scene_GalaxyImpact : public Scene {
 private:
     sPtrEntt        m_player{ nullptr };
     sf::View        m_worldView;
+    sf::View        m_HudView;
     sf::FloatRect   m_worldBounds;
     LevelConfig     m_config;
 
@@ -93,6 +94,7 @@ private:
     void            checkMissileCollision();
     void            checkPickupCollisions();
     void	        registerActions();
+    void            renderLives();
     void            spawnPlayer();
     void            spawnEnemy();
     void            spawnBoss();
@@ -108,6 +110,7 @@ private:
     void            destroyBulletsOutsideBattlefield();
     void            destroyEnemiesOutsideBattleField();
     void            destroyMissilesOutsideBattleField();
+    void            destroyPickupOutsideBattleField();
     void            dropPickup(sf::Vector2f pos);
 public:
 
