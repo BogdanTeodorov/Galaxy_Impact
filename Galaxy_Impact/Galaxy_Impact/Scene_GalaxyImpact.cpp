@@ -1,8 +1,5 @@
 #include "Scene_GalaxyImpact.h"
 
-//
-// Created by David Burchill on 2023-09-27.
-//
 
 #include <fstream>
 #include <iostream>
@@ -30,11 +27,15 @@ sf::Time spawnInterval;
 sf::Time spawnTimer;
 sf::Vector2f enemyPrevPos;
 int bugedEnemiesCount{ 0 };
+int bossCount{ 1 };
 bool sortedUp;
 int lvlIndex{ 0 };
 sf::Time changeSceneTime;
 sf::Time playerInvincibleTime;
 int deathCount;
+bool canSpawnEnemies;
+sf::Time bossChargeAttackCD;
+sf::Time bossMissileCD = sf::seconds(3.f);
 
 
 
@@ -57,7 +58,8 @@ Scene_GalaxyImpact::Scene_GalaxyImpact(GameEngine* gameEngine, const std::string
 
 void Scene_GalaxyImpact::init() {
    
-    
+    bossChargeAttackCD = sf::seconds(5.f);
+    canSpawnEnemies = true;
     deathCount = 0;
     playerInvincibleTime = sf::seconds(2.f);
     enemyPrevPos = sf::Vector2f(0.f, 0.f);
@@ -73,6 +75,7 @@ void Scene_GalaxyImpact::init() {
 void Scene_GalaxyImpact::sMovement(sf::Time dt) {
     playerMovement();
     assaultMovement();
+    bossMovement(dt);
 
     // move all objects
     for (auto e : m_entityManager.getEntities()) {
@@ -167,6 +170,30 @@ void Scene_GalaxyImpact::playerMovement() {
 
     
 }
+
+bool Scene_GalaxyImpact::bossTime(int bossCount)
+{
+    return m_player->getComponent<CTransform>().pos.x >= 800.f and bossCount ==1;
+}
+
+void Scene_GalaxyImpact::bossLaunchMissile()
+{
+    for (auto b : m_entityManager.getEntities(bossNames[Lv1Boss])) {
+        if (b->hasComponent<CMissiles>()) {
+
+            auto pos = b->getComponent<CTransform>().pos;
+            auto missile = m_entityManager.addEntity("BossMissile");
+            missile->addComponent<CState>("launched");
+            missile->addComponent<CTransform>(pos + sf::Vector2f(0.f, -60.f), sf::Vector2f(m_config.missileSpeed, 0.f));
+            auto bb = missile->addComponent<CAnimation>(Assets::getInstance().getAnimation("boss-missile")).animation.getBB();
+            missile->addComponent<CBoundingBox>(bb);
+            // SoundPlayer::getInstance().play("LaunchMissile", pos);
+
+        }
+    }
+}
+
+
 
 
 void Scene_GalaxyImpact::sRender() {
@@ -310,13 +337,14 @@ void Scene_GalaxyImpact::sGunUpdate(sf::Time dt)
     for (auto e : m_entityManager.getEntities()) {
         if (e->hasComponent<CGun>()) {
             bool isEnemy = (e->getTag() == enemyNames[Assault] || e->getTag() == enemyNames[Predator]);
+            bool isBoss = e->getTag() == bossNames[Lv1Boss];
             auto& gun = e->getComponent<CGun>();
             gun.countdown -= dt;
             auto& viewBounds = m_worldView.getCenter();
             
             
 
-            if (isEnemy && viewBounds.x*2 -50.f >= e->getComponent<CTransform>().pos.x) // enemy is  firing when in the view
+            if (isEnemy or isBoss && viewBounds.x*2 -50.f >= e->getComponent<CTransform>().pos.x) // enemy is  firing when in the view
                 gun.isFiring = true;
 
             //
@@ -328,7 +356,7 @@ void Scene_GalaxyImpact::sGunUpdate(sf::Time dt)
 
                 auto pos = e->getComponent<CTransform>().pos;
             
-                spawnBullet(pos, isEnemy);
+                spawnBullet(pos, isEnemy, isBoss);
                
                     
 
@@ -516,6 +544,7 @@ void Scene_GalaxyImpact::sDoAction(const Command& action) {
 }
 
 
+
 void Scene_GalaxyImpact::spawnPlayer() {
     //spawn position
     auto pos = m_worldView.getSize();
@@ -577,11 +606,11 @@ void Scene_GalaxyImpact::spawnLaser(sf::Vector2f pos)
     laser->addComponent<CInput>();
 
 }
-void Scene_GalaxyImpact::spawnBullet(sf::Vector2f pos, bool isEnemy)
+void Scene_GalaxyImpact::spawnBullet(sf::Vector2f pos, bool isEnemy, bool isBoss)
 {
     float speed;
 
-    if (isEnemy) {
+    if (isEnemy or isBoss) {
         speed = -m_config.bulletSpeed;
        /* SoundPlayer::getInstance().play("EnemyGunfire", pos);*/
     }
@@ -589,38 +618,135 @@ void Scene_GalaxyImpact::spawnBullet(sf::Vector2f pos, bool isEnemy)
         speed = m_config.bulletSpeed;
         /*SoundPlayer::getInstance().play("AlliedGunfire", pos);*/
     }
-    auto bullet = m_entityManager.addEntity(isEnemy ? "EnemyBullet" : "PlayerBullet");
-    auto bb = isEnemy ? bullet->addComponent<CAnimation>(Assets::getInstance().getAnimation("ebullet-v1")).animation.getBB():
-    bullet->addComponent<CAnimation>(Assets::getInstance().getAnimation("bullet")).animation.getBB();
-    if (!isEnemy) {
-        bullet->getComponent<CAnimation>().animation.getSprite().setRotation(-90.f);
-    }
-    bullet->addComponent<CBoundingBox>(bb);
-    bullet->addComponent<CTransform>(pos, sf::Vector2f(speed, 0.f));
     if (isEnemy) {
-        for (auto e : m_entityManager.getEntities() ){
-           if(e->getTag()== enemyNames[Assault])
-            bullet->addComponent<CState>("assaultBullet");
-           else if (e->getTag() == enemyNames[Predator]) {
-               bullet->addComponent<CState>("predatorBullet");
-           }
+        auto bullet = m_entityManager.addEntity("EnemyBullet");
+        if (isEnemy && canSpawnEnemies) {
+            auto bb = bullet->addComponent<CAnimation>(Assets::getInstance().getAnimation("ebullet-v1")).animation.getBB();
+            bullet->addComponent<CBoundingBox>(bb);
+            for (auto e : m_entityManager.getEntities()) {
+                if (e->getTag() == enemyNames[Assault])
+                    bullet->addComponent<CState>("assaultBullet");
+                else if (e->getTag() == enemyNames[Predator]) {
+                    bullet->addComponent<CState>("predatorBullet");
+                }
+            }
+            bullet->addComponent<CTransform>(pos, sf::Vector2f(speed, 0.f));
+        }
+    }
+    else if (isBoss) {
+        auto bBullet = m_entityManager.addEntity("BossBullet");
+        auto bossBb = bBullet->addComponent<CAnimation>(Assets::getInstance().getAnimation("ebullet-v2")).animation.getBB();
+        auto& bossBA = bBullet->getComponent<CAnimation>().animation.getSprite();
+        bossBA.setRotation(180.f);
+        bBullet->addComponent<CBoundingBox>(bossBb);
+        bBullet->addComponent<CTransform>(pos, sf::Vector2f(speed, 0.f));
+    }
+    else {
+        auto bullet = m_entityManager.addEntity("PlayerBullet");
+        auto bb = bullet->addComponent<CAnimation>(Assets::getInstance().getAnimation("bullet")).animation.getBB();
+        bullet->getComponent<CAnimation>().animation.getSprite().setRotation(-90.f);
+        bullet->addComponent<CBoundingBox>(bb);
+        bullet->addComponent<CTransform>(pos, sf::Vector2f(speed, 0.f));
+    }
+    
+    
+
+}
+
+void Scene_GalaxyImpact::bossMovement(sf:: Time dt)
+{
+    auto view = m_worldView.getCenter();
+    auto triggerPoint = view.x + 300.f;
+    float chargeSpeed = -500.f;
+    auto chargeEndPoint = view.x - 300.f;
+
+  
+    for (auto boss : m_entityManager.getEntities(bossNames[Lv1Boss])) {
+        auto halfSize = boss->getComponent<CBoundingBox>().halfSize;
+        auto& state = boss->getComponent<CState>().state;
+        auto& pos = boss->getComponent<CTransform>().pos;
+        auto& vel = boss->getComponent<CTransform>().vel;
+        if (triggerPoint >= pos.x and state == "alive") {
+
+            
+            vel.x = 0.f;
+            vel.y = 1.f * m_config.enemySpeed;
+            state = "moveV";
+        }
+        else if (triggerPoint >= pos.x and state == "moveV" and bossChargeAttackCD > sf::Time::Zero) {
+
+            bossChargeAttackCD -= dt;
+
+            if (view.y * 2 <= pos.y + halfSize.y) {
+
+                vel.y *= -1;
+
+
+            }
+            else if (view.y / view.y >= pos.y - halfSize.y) {
+
+                vel.y *= -1;
+
+            }
+
+        }
+        else if (bossChargeAttackCD <= sf::Time::Zero and state == "moveV") {
+
+            vel.y = 0;
+            vel.x = 1.f * chargeSpeed;
+            state = "moveH";
+
+            
+
+        }
+        else if (chargeEndPoint >= pos.x and state == "moveH") {
+
+            vel.x = 1.f * m_config.enemySpeed;
+            state = "moveB";
+            bossChargeAttackCD = sf::seconds(5.f);
+        }
+        else if (pos.x > triggerPoint and state == "moveB") {
+
+            pos.x = triggerPoint;
+            vel.x = 0.f;
+            vel.y = 1.f * m_config.enemySpeed;
+            state = "moveV";
+
         }
 
-        
-        
     }
+   
+   
 
-
+}
+sf::Vector2f Scene_GalaxyImpact::findPlayer(sf::Vector2f mPos)
+{
+    bool isPlayer;
+    float closest = std::numeric_limits<float>::max();
+    sf::Vector2f posClosest{ 0.f, 0.f };
+   
+        isPlayer = m_player->getTag()=="player";
+        if (isPlayer  && m_player->getComponent<CTransform>().has) {
+            auto pPos = m_player->getComponent<CTransform>().pos;
+            float distToEnemy = dist(mPos, pPos);
+            if (distToEnemy < closest) {
+                closest = distToEnemy;
+                posClosest = pPos;
+            }
+        }
+    return posClosest;
 }
 
 sf::Vector2f Scene_GalaxyImpact::findClosestEnemy(sf::Vector2f mPos)
 {
     float closest = std::numeric_limits<float>::max();
     bool isEnemy;
+    bool isBoss;
     sf::Vector2f posClosest{ 0.f, 0.f };
     for (auto e : m_entityManager.getEntities()) {
         isEnemy = (e->getTag() == enemyNames[Assault] || e->getTag() == enemyNames[Predator] || e->getTag() == enemyNames[Rusher]);
-        if (isEnemy && e->getComponent<CTransform>().has) {
+        isBoss = e->getTag() == bossNames[Lv1Boss];
+        if (isEnemy or isBoss && e->getComponent<CTransform>().has) {
             auto ePos = e->getComponent<CTransform>().pos;
             float distToEnemy = dist(mPos, ePos);
             if (distToEnemy < closest) {
@@ -646,6 +772,18 @@ void Scene_GalaxyImpact::sGuideMissiles(sf::Time dt)
         }
     }
 
+    for (auto e : m_entityManager.getEntities("BossMissile")) {
+        if (e->getComponent<CTransform>().has) {
+            auto& tfm = e->getComponent<CTransform>();
+            auto ePos = findPlayer(tfm.pos);
+
+            auto targetDir = normalize(ePos - tfm.pos);
+            tfm.vel = m_config.missileSpeed * normalize(approachRate * dt.asSeconds() * targetDir + tfm.vel);
+            tfm.angle = bearing(tfm.vel) + 90;
+        }
+    }
+
+
 }
 
 void Scene_GalaxyImpact::fireMissile()
@@ -668,6 +806,30 @@ void Scene_GalaxyImpact::fireMissile()
            // SoundPlayer::getInstance().play("LaunchMissile", pos);
         }
     }
+}
+
+void Scene_GalaxyImpact::spawnBoss()
+{
+    auto view = m_worldView.getCenter();
+    float bossSpeed = -200.f;
+    auto pos = sf::Vector2f(view.x * 2 + 50.f, view.y);
+    auto bossVel = sf::Vector2f(1.f, 0.f);
+    int gunDamage = 45;
+    int missileDamage = 80;
+    auto boss = m_entityManager.addEntity(bossNames[Lv1Boss]);
+
+    boss->addComponent<CTransform>(pos, bossVel * bossSpeed);
+    boss->addComponent<CAnimation>(Assets::getInstance().getAnimation("Lvl1Boss"));
+    auto bb = boss->getComponent<CAnimation>().animation.getBB();
+    boss->addComponent<CBoundingBox>(bb);
+    auto& bRotation = boss->getComponent<CAnimation>().animation.getSprite();
+    bRotation.setRotation(-90.f);
+    boss->addComponent<CHealth>(400);
+    boss->addComponent<CGun>(gunDamage);
+    boss->addComponent<CMissiles>(1, 100);
+    boss->addComponent<CState>("alive");
+
+   
 }
 
 void Scene_GalaxyImpact::spawnEnemy()
@@ -869,9 +1031,12 @@ void Scene_GalaxyImpact::spawnEnemy()
 
 
 
+
+
 void Scene_GalaxyImpact::sCollisions() {
     adjustPlayerPosition();
     adjustEnemyPosition();
+    adjustBossPosition();
     checkShipCollisions();
     checkBulletCollison();
     checkMissileCollision();
@@ -1018,6 +1183,22 @@ void Scene_GalaxyImpact::checkShipCollisions()
         }
 
     }
+
+    // player vs boss
+    for (auto b : m_entityManager.getEntities(bossNames[Lv1Boss])) {
+        auto overlap = Physics::getOverlap(m_player, b);
+
+        if (overlap.x > 0 and overlap.y > 0) {
+            pHealth -= pHealth;
+            if (pHealth <= 0) {
+                pState = "dead";
+                m_player->removeComponent<CBoundingBox>();
+                m_player->removeComponent<CInput>();
+                m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+
+            }
+        }
+    }
 }
 
 void Scene_GalaxyImpact::checkBulletCollison()
@@ -1026,7 +1207,7 @@ void Scene_GalaxyImpact::checkBulletCollison()
     auto pGunDmg = m_player->getComponent<CGun>().gunDamage;
     auto& pState = m_player->getComponent<CState>().state;
 
-    //Player bullets vs enemies
+    //Player bullets vs enemies and Boss missiles
     for (auto bullet : m_entityManager.getEntities("PlayerBullet")) {
         for (auto e : m_entityManager.getEntities(enemyNames[Predator])) {
 
@@ -1088,11 +1269,42 @@ void Scene_GalaxyImpact::checkBulletCollison()
 
             }
         }
+        for (auto b : m_entityManager.getEntities(bossNames[Lv1Boss])) {
+
+            auto& bHealth = b->getComponent<CHealth>().hp;
+            auto overlap = Physics::getOverlap(bullet, b);
+            auto& bState = b->getComponent<CState>().state;
+
+            if (overlap.x > 0 and overlap.y > 0) {
+                bullet->destroy();
+                bHealth -= pGunDmg;
+                if (bHealth <= 0) {
+                    bState = "dead";
+                    b->removeComponent<CBoundingBox>();
+                    b->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+                }
+            }
+
+        }
+        for (auto bm : m_entityManager.getEntities("BossMissile")) {
+
+            auto overlap = Physics::getOverlap(bullet, bm);
+            auto& bmState = bm->getComponent<CState>().state;
+
+            if (overlap.x > 0 and overlap.y > 0) {
+
+                bullet->destroy();
+                bmState = "destroyed";
+                bm->removeComponent<CBoundingBox>();
+                bm->addComponent<CAnimation>(Assets::getInstance().getAnimation("rusher-explosion"));
+                
+            }
+
+        }
     }
 
     // Enemy bullets vs player
     for (auto eBullet : m_entityManager.getEntities("EnemyBullet")) {
-        auto eBulletState = eBullet->getComponent<CState>().state;
         auto overlap = Physics::getOverlap(m_player, eBullet);
         auto bState = eBullet->getComponent<CState>().state;
         
@@ -1112,6 +1324,32 @@ void Scene_GalaxyImpact::checkBulletCollison()
 
 
         }
+    }
+
+    //Boss bullets vs Player
+    for (auto bBullet : m_entityManager.getEntities("BossBullet")) {
+        auto overlap = Physics::getOverlap(m_player, bBullet);
+        for (auto b : m_entityManager.getEntities(bossNames[Lv1Boss])) {
+
+            auto bGunDmg = b->getComponent<CGun>().gunDamage;
+
+            if (overlap.x > 0 and overlap.y > 0) {
+               
+                pHealth -= bGunDmg;
+                bBullet->destroy();
+
+                if (pHealth <= 0) {
+                    pState = "dead";
+                    m_player->removeComponent<CBoundingBox>();
+                    m_player->removeComponent<CInput>();
+                    m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+
+                }
+            }
+
+
+        }
+        
     }
 }
        
@@ -1140,14 +1378,14 @@ void Scene_GalaxyImpact::checkLaserCollision()
             }
         }
 
-        // missile vs predator
+        // laser vs predator
         for (auto e : m_entityManager.getEntities(enemyNames[Predator])) {
             auto& eHealth = e->getComponent<CHealth>().hp;
             auto& eState = e->getComponent<CState>().state;
             auto overlap = Physics::getOverlap(laser, e);
 
             if (overlap.x > 0 and overlap.y > 0) {
-                
+
                 eHealth -= laserDmg;
 
                 if (eHealth <= 0) {
@@ -1156,25 +1394,59 @@ void Scene_GalaxyImpact::checkLaserCollision()
                     e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
                 }
             }
+        }
+        //laser vs Assault
+        for (auto e : m_entityManager.getEntities(enemyNames[Assault])) {
+            auto& eHealth = e->getComponent<CHealth>().hp;
+            auto& eState = e->getComponent<CState>().state;
+            auto overlap = Physics::getOverlap(laser, e);
 
-            // missile vs assault
-            for (auto e : m_entityManager.getEntities(enemyNames[Assault])) {
-                auto& eHealth = e->getComponent<CHealth>().hp;
-                auto& eState = e->getComponent<CState>().state;
-                auto overlap = Physics::getOverlap(laser, e);
+            if (overlap.x > 0 and overlap.y > 0) {
 
-                if (overlap.x > 0 and overlap.y > 0) {
-                    
-                    eHealth -= laserDmg;
+                eHealth -= laserDmg;
 
-                    if (eHealth <= 0) {
-                        eState = "dead";
-                        e->removeComponent<CBoundingBox>();
-                        e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
-                    }
+                if (eHealth <= 0) {
+                    eState = "dead";
+                    e->removeComponent<CBoundingBox>();
+                    e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
                 }
             }
         }
+         // laser vs Boss
+        for (auto b : m_entityManager.getEntities(bossNames[Lv1Boss])) {
+
+            auto& bHealth = b->getComponent<CHealth>().hp;
+            auto& bState = b->getComponent<CState>().state;
+            auto overlap = Physics::getOverlap(laser, b);
+
+            if (overlap.x > 0 and overlap.y > 0) {
+
+                bHealth -= laserDmg/3;
+
+                if (bHealth <= 0) {
+                    bState = "dead";
+                    b->removeComponent<CBoundingBox>();
+                    b->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+                }
+            }
+
+        }
+        //laser vs Boss missiles
+        for (auto bm : m_entityManager.getEntities("BossMissile")) {
+
+            auto overlap = Physics::getOverlap(laser, bm);
+            auto& bmState = bm->getComponent<CState>().state;
+
+            if (overlap.x > 0 and overlap.y > 0) {
+
+                bmState = "destroyed";
+                bm->removeComponent<CBoundingBox>();
+                bm->addComponent<CAnimation>(Assets::getInstance().getAnimation("rusher-explosion"));
+
+            }
+
+        }
+        
     }
 }
 void Scene_GalaxyImpact::checkMissileCollision()
@@ -1240,6 +1512,51 @@ void Scene_GalaxyImpact::checkMissileCollision()
                 }
             }
         }
+
+        for (auto b : m_entityManager.getEntities(bossNames[Lv1Boss])) {
+            auto& bState = b->getComponent<CState>().state;
+            auto& bHealth = b->getComponent<CHealth>().hp;
+            auto overlap = Physics::getOverlap(missile, b);
+
+            if (overlap.x > 0 and overlap.y > 0) {
+
+                bHealth -= missileDmg;
+                missile->destroy();
+
+
+                if (bHealth <= 0) {
+                    bState = "dead";
+                    b->removeComponent<CBoundingBox>();
+                    b->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+                }
+            }
+        }
+    }
+
+    //Boss missile vs Player
+    for (auto bm : m_entityManager.getEntities("BossMissile")) {
+        auto& pState = m_player->getComponent<CState>().state;
+        auto& pHealth = m_player->getComponent<CHealth>().hp;
+        auto mPos = bm->getComponent<CTransform>().pos;
+        auto overlap = Physics::getOverlap(m_player, bm);
+       
+
+        if (overlap.x > 0 and overlap.y > 0) {
+
+            pHealth -= pHealth
+                ;
+            bm->destroy();
+
+
+            if (pHealth <= 0) {
+                pState = "dead";
+                m_player->removeComponent<CBoundingBox>();
+                m_player->removeComponent<CInput>();
+                m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
+            }
+        }
+
+
     }
 }
 
@@ -1284,7 +1601,7 @@ void Scene_GalaxyImpact::checkPickupCollisions()
 void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
     SoundPlayer::getInstance().removeStoppedSounds();
     m_entityManager.update();
-    if (!m_isPaused) { m_worldView.move(m_config.scrollSpeed * dt.asSeconds() * 1, 0.f); }
+    if (!m_isPaused and canSpawnEnemies) { m_worldView.move(m_config.scrollSpeed * dt.asSeconds() * 1, 0.f); }
     spawnTimer += dt;
     changeSceneTime += dt;
     
@@ -1295,10 +1612,30 @@ void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
         laserCharge -= chargeCost;
     }
 
-    if (spawnTimer >= spawnInterval) {
+    if (bossMissileCD > sf::Time::Zero && !canSpawnEnemies) {
+        bossMissileCD -= dt;
+    }
+    else if (bossMissileCD <= sf::Time::Zero) {
+
+        bossLaunchMissile();
+        bossMissileCD = sf::seconds(3.f);
+    }
+
+
+    if (spawnTimer >= spawnInterval && canSpawnEnemies) {
         spawnTimer = sf::seconds(0.f);
         spawnEnemy();
         spawnInterval = sf::seconds(spawnIntervalDistribution(rng));
+    }
+    
+    //check if player reached bossTime postion
+
+    if (bossTime(bossCount)) {
+        bossCount--;
+        spawnBoss();
+        canSpawnEnemies = false;
+       
+        
     }
     
    
@@ -1346,9 +1683,9 @@ void Scene_GalaxyImpact::sAnimation(sf::Time dt) {
 
 
     for (auto e : m_entityManager.getEntities()) {
-        auto eAnimation = e->getComponent<CAnimation>().animation;
+        //auto eAnimation = e->getComponent<CAnimation>().animation;
         bool isEnemy = (e->getTag() == enemyNames[Assault] || e->getTag() == enemyNames[Predator] || e->getTag() == enemyNames[Rusher]);
-        auto eState = e->getComponent<CState>().state;
+        bool isBoss = e->getTag() == bossNames[Lv1Boss];
         // update all animations
         if (e->hasComponent<CAnimation>()) {
             auto& anim = e->getComponent<CAnimation>();
@@ -1364,11 +1701,57 @@ void Scene_GalaxyImpact::sAnimation(sf::Time dt) {
                 }
 
             }
-            if (isEnemy && eAnimation.hasEnded() and eState == "dead") {
-                auto pos = e->getComponent<CTransform>().pos;
-                dropPickup(pos);
-                e->destroy();
+
+            for (auto e : m_entityManager.getEntities(enemyNames[Rusher])) {
+                auto eState = e->getComponent<CState>().state;
+                auto eAnimation = e->getComponent<CAnimation>().animation;
+
+                if (isEnemy && eAnimation.hasEnded() and eState == "dead") {
+                    auto pos = e->getComponent<CTransform>().pos;
+                    dropPickup(pos);
+                    e->destroy();
+                }
             }
+
+            for (auto e : m_entityManager.getEntities(enemyNames[Assault])) {
+                auto eState = e->getComponent<CState>().state;
+                auto eAnimation = e->getComponent<CAnimation>().animation;
+
+                if (isEnemy && eAnimation.hasEnded() and eState == "dead") {
+                    auto pos = e->getComponent<CTransform>().pos;
+                    dropPickup(pos);
+                    e->destroy();
+                }
+            }
+
+            for (auto e : m_entityManager.getEntities(enemyNames[Predator])) {
+                auto eState = e->getComponent<CState>().state;
+                auto eAnimation = e->getComponent<CAnimation>().animation;
+
+                if (isEnemy && eAnimation.hasEnded() and eState == "dead") {
+                    auto pos = e->getComponent<CTransform>().pos;
+                    dropPickup(pos);
+                    e->destroy();
+                }
+            }
+
+            for (auto b : m_entityManager.getEntities(bossNames[Lv1Boss])) {
+                auto bAnim = b->getComponent<CAnimation>();
+                auto bState = b->getComponent<CState>().state;
+                if (isBoss && bAnim.animation.hasEnded() and bState == "dead") {
+
+                    b->destroy();
+                }
+            }
+
+            for (auto bm : m_entityManager.getEntities("BossMissile")) {
+                auto bmAnim = bm->getComponent<CAnimation>();
+                auto bmState = bm->getComponent<CState>().state;
+                if (bmAnim.animation.hasEnded() and bmState == "destroyed") {
+                    bm->destroy();
+                }
+            }
+
 
             for (auto& t : m_entityManager.getEntities("3turtles")) {
 
@@ -1445,6 +1828,8 @@ bool Scene_GalaxyImpact::isTransperent(sf::Sprite colorOpacity)
 
 
 
+
+
 void Scene_GalaxyImpact::adjustPlayerPosition() {
     auto center = m_worldView.getCenter();
     sf::Vector2f viewHalfSize = m_worldView.getSize() / 2.f;
@@ -1462,6 +1847,27 @@ void Scene_GalaxyImpact::adjustPlayerPosition() {
     player_pos.x = std::min(player_pos.x, right - halfSize.x);
     player_pos.y = std::max(player_pos.y, top + halfSize.y);
     player_pos.y = std::min(player_pos.y, bot - halfSize.y);
+}
+
+void Scene_GalaxyImpact::adjustBossPosition()
+{
+    auto center = m_worldView.getCenter();
+    sf::Vector2f viewHalfSize = m_worldView.getSize() / 2.f;
+
+
+    auto left = center.x - viewHalfSize.x;
+    auto right = center.x + viewHalfSize.x;
+    auto top = center.y - viewHalfSize.y;
+    auto bot = center.y + viewHalfSize.y;
+
+    for (auto boss : m_entityManager.getEntities(bossNames[Lv1Boss])) {
+        auto& boss_pos = boss->getComponent<CTransform>().pos;
+        auto halfSize = sf::Vector2f{ boss->getComponent<CBoundingBox>().halfSize.x, boss->getComponent<CBoundingBox>().halfSize.y };
+        // keep boss in bounds
+        boss_pos.y = std::max(boss_pos.y, top + halfSize.y);
+        boss_pos.y = std::min(boss_pos.y, bot - halfSize.y);
+    }
+   
 }
 
 void Scene_GalaxyImpact::checkPlayerState() {

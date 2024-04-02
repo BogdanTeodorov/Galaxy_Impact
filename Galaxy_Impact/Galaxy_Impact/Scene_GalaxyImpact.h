@@ -48,7 +48,14 @@ private:
         {Enemies::Predator, "predator"}
     };
 
+    enum Bosses {
+        Lv1Boss
+    };
 
+    std::map<Bosses, std::string> bossNames = {
+
+        { Bosses::Lv1Boss, "Lv1Boss" }
+    };
 
     bool			m_drawTextures{ true };
     bool			m_drawAABB{ false };
@@ -72,7 +79,11 @@ private:
 
     // helper functions
     void            playerMovement();
+    bool            bossTime(int bossCount);
+    void            bossLaunchMissile();
+    sf::Vector2f    findPlayer(sf::Vector2f mPos);
     void            adjustPlayerPosition();
+    void            adjustBossPosition();
     void            adjustEnemyPosition();
     bool            isTransperent(sf::Sprite colorOpacity);
     void            checkPlayerState();
@@ -84,11 +95,13 @@ private:
     void	        registerActions();
     void            spawnPlayer();
     void            spawnEnemy();
+    void            spawnBoss();
     void            spawnLaser(sf::Vector2f pos);
     void            fireBullets();
     void            fireMissile();
     sf::Vector2f    findClosestEnemy(sf::Vector2f mPos);
-    void            spawnBullet(sf::Vector2f pos, bool isEnemy);
+    void            spawnBullet(sf::Vector2f pos, bool isEnemy, bool isBoss);
+    void            bossMovement(sf::Time dt);
     void            init();
     void            loadLevel(const std::string& path);
     void            assaultMovement();

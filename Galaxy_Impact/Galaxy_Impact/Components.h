@@ -1,6 +1,4 @@
-//
-// Created by David Burchill on 2023-09-27.
-//
+
 
 #ifndef BREAKOUT_COMPONENTS_H
 #define BREAKOUT_COMPONENTS_H
