@@ -6,6 +6,7 @@
 #include <memory>
 #include <cstdlib>
 #include<iostream>
+#include"MusicPlayer.h"
 
 
 GameEngine::GameEngine(const std::string& path)
@@ -137,10 +138,13 @@ void GameEngine::run()
 
 void GameEngine::quitLevel() {
 	changeScene("MENU", nullptr, true);
+	MusicPlayer::getInstance().play("menuTheme");
 }
 
 void GameEngine::backLevel() {
 	changeScene("MENU", nullptr, false);
+	MusicPlayer::getInstance().play("menuTheme");
+
 
 }
 

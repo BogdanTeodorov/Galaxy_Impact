@@ -22,6 +22,7 @@ public:
 	Scene_Menu(GameEngine* gameEngine);
 
 	void update(sf::Time dt) override;
+	void loadMenuConfig(const std::string& path);
 
 	void sRender() override;
 	void sDoAction(const Command& action) override;

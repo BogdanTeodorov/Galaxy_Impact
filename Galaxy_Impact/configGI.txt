@@ -6,12 +6,13 @@ Font    Arial           ../assets/fonts/arial.ttf
 Font    main            ../assets/fonts/Sansation.ttf
 Font    Arcade          ../assets/fonts/arcadeclassic.regular.ttf
 
-Music gameTheme         ../assets/Music/frogger.ogg
-Music missionTheme      ../assets/Music/tweener.ogg
+Music menuTheme         ../assets/Music/main-menu-song.mp3
+Music missionTheme      ../assets/Music/Level_music.ogg
 
 # Textures
 Texture Background      ../assets/Textures/background.jpg
 Texture Background2      ../assets/Textures/background2.jpg
+Texture Menu		../assets/Textures/background-menu.png
 Texture Palnet-1	../assets/Textures/Planet-1.png
 Texture Title           ../assets/Textures/FroggerTitle.png
 Texture Entities        ../assets/Textures/Galaxy_Impact-Sprite-Sheet-no-tags.png
@@ -23,6 +24,15 @@ Sprite Title            Title 0 0 480 600
 # SOUNDS
 Sound death             ../assets/Sound/froggerDie.wav
 Sound hop               ../assets/Sound/froggerMove.wav
+Sound pgun		../assets/Sound/gun-shot.wav
+Sound bgun		../assets/Sound/boss-gun.mp3
+Sound missile		../assets/Sound/missile.mp3
+Sound laser		../assets/Sound/laser.mp3
+Sound rusher		../assets/Sound/rusher-charge.wav
+Sound eexplosion	../assets/Sound/e_explosion.wav
+Sound pexplosion	../assets/Sound/pexplosion.wav
+Sound bexplosion	../assets/Sound/bexplosion.wav
+Sound pick-up		../assets/Sound/pick-up.wav
 
 JSON                    ../assets/Textures/Galaxy_Impact-Sprite-Sheet-no-tags.json
 

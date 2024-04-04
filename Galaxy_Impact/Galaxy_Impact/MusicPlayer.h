@@ -31,6 +31,7 @@ public:
     void							stop();
     void							setPaused(bool paused);
     void							setVolume(float volume);
+    void                            setLoop(bool inLoop);
 
 
 private:

@@ -37,8 +37,8 @@ bool canSpawnEnemies;
 sf::Time bossChargeAttackCD;
 sf::Time bossMissileCD = sf::seconds(3.f);
 int planetCount = 0;
-int totalLives = 3;
-
+int totalLives;
+bool canPlayMusic = false;
 
 
 Scene_GalaxyImpact::Scene_GalaxyImpact(GameEngine* gameEngine, const std::string& levelPath)
@@ -47,8 +47,8 @@ Scene_GalaxyImpact::Scene_GalaxyImpact(GameEngine* gameEngine, const std::string
 {
     loadLevel(levelPath);
     registerActions();
-    //MusicPlayer::getInstance().play("gameTheme");
-    //MusicPlayer::getInstance().setVolume(50);
+    MusicPlayer::getInstance().play("levelTheme");
+    MusicPlayer::getInstance().setVolume(35);
 
     init();
     
@@ -58,7 +58,7 @@ Scene_GalaxyImpact::Scene_GalaxyImpact(GameEngine* gameEngine, const std::string
 
 
 void Scene_GalaxyImpact::init() {
-   
+    totalLives = 3;
     bossChargeAttackCD = sf::seconds(5.f);
     canSpawnEnemies = true;
     deathCount = 0;
@@ -194,7 +194,7 @@ void Scene_GalaxyImpact::playerMovement() {
 
 bool Scene_GalaxyImpact::bossTime(int bossCount)
 {
-    return m_player->getComponent<CTransform>().pos.x >= 800.f and bossCount ==1;
+    return m_player->getComponent<CTransform>().pos.x >= 1600.f and bossCount == 1;
 }
 
 void Scene_GalaxyImpact::bossLaunchMissile()
@@ -208,7 +208,8 @@ void Scene_GalaxyImpact::bossLaunchMissile()
             missile->addComponent<CTransform>(pos + sf::Vector2f(0.f, -60.f), sf::Vector2f(m_config.missileSpeed, 0.f));
             auto bb = missile->addComponent<CAnimation>(Assets::getInstance().getAnimation("boss-missile")).animation.getBB();
             missile->addComponent<CBoundingBox>(bb);
-            // SoundPlayer::getInstance().play("LaunchMissile", pos);
+           
+
 
         }
     }
@@ -300,7 +301,7 @@ void Scene_GalaxyImpact::sRender() {
     for (auto b : m_entityManager.getEntities(bossNames[Lv1Boss])) {
         auto bstate = b->getComponent<CState>().state;
         // W scenario
-        if (bstate == "dead" and totalLives > 0) {
+        if (bstate == "defeated" and totalLives > 0) {
             static sf::Text winnerT("Congratulation", Assets::getInstance().getFont("Arcade"), 35);
             std::string  winnerStr = "Congratulation!\n Demo Level Completed !!!";
             winnerT.setString(winnerStr);
@@ -311,13 +312,14 @@ void Scene_GalaxyImpact::sRender() {
         
        
     }
+    // draw loose Screen
     if (totalLives <= 0) {
-        static sf::Text loseT("Game Over", Assets::getInstance().getFont("Arcade"), 35);
-        std::string  losestr = "Game Over!\n Your Impact\n Was Not\n Good Enough !!!";
-        loseT.setString(losestr);
-        loseT.setFillColor(sf::Color::Red);
-        loseT.setPosition(view.getCenter().x - 200, view.getCenter().y);
-        m_game->window().draw(loseT);
+        static sf::Text looseT("Game Over", Assets::getInstance().getFont("Arcade"), 35);
+        std::string  loosestr = "Game Over!\n Your Impact\n Was Not\n Good Enough !!!";
+        looseT.setString(loosestr);
+        looseT.setFillColor(sf::Color::Red);
+        looseT.setPosition(view.getCenter().x - 200, view.getCenter().y);
+        m_game->window().draw(looseT);
     }
 
    /* if (lilyCount == 5) {
@@ -350,18 +352,6 @@ void Scene_GalaxyImpact::sRender() {
     }*/
    
    
-   
-      /* auto Wview = m_worldView.getCenter();
-       
-       for (int i{ 0 }; i < totalLives; i++) {
-           for (auto e : m_entityManager.getEntities("life")) {
-               auto& ePos = e->getComponent<CTransform>().pos;
-               auto pos = sf::Vector2f((Wview.x / 2) + (i * 15), Wview.y / Wview.y + 20.f);
-               ePos = pos;
-               
-           }
-       }*/
-       
    
    
     for (auto& e : m_entityManager.getEntities()) {
@@ -421,9 +411,10 @@ void Scene_GalaxyImpact::sGunUpdate(sf::Time dt)
             
             
 
-            if (isEnemy or isBoss && viewBounds.x*2 -50.f >= e->getComponent<CTransform>().pos.x) // enemy is  firing when in the view
+            if (isEnemy or isBoss  && viewBounds.x*2 -50.f >= e->getComponent<CTransform>().pos.x) // enemy is  firing when in the view
                 gun.isFiring = true;
 
+            
             //
             // when firing
             //
@@ -608,7 +599,10 @@ void Scene_GalaxyImpact::update(sf::Time dt) {
 void Scene_GalaxyImpact::sDoAction(const Command& action) {
     // On Key Press
     if (action.type() == "START") {
-        if (action.name() == "PAUSE") { setPaused(!m_isPaused); }
+        if (action.name() == "PAUSE") { 
+            setPaused(!m_isPaused); 
+            MusicPlayer::getInstance().setPaused(m_isPaused);
+        }
         else if (action.name() == "QUIT") { m_game->quitLevel(); }
         else if (action.name() == "BACK") { m_game->backLevel(); }
 
@@ -679,6 +673,7 @@ void Scene_GalaxyImpact::fireBullets()
     if (m_player->hasComponent<CGun>() && laserCharge <=0) {
         m_player->getComponent<CGun>().isFiring = true;
         m_player->getComponent<CLaser>().isShooting = false;
+        SoundPlayer::getInstance().play("pgun", m_player->getComponent<CTransform>().pos);
 
         for (auto& l : m_entityManager.getEntities("laser")) {
             l->destroy();
@@ -706,6 +701,7 @@ void Scene_GalaxyImpact::spawnLaser(sf::Vector2f pos)
     laser->addComponent<CBoundingBox>(bb);
     laser->addComponent<CTransform>(pos, lvel);
     laser->addComponent<CInput>();
+    SoundPlayer::getInstance().play("laser");
 
 }
 void Scene_GalaxyImpact::spawnBullet(sf::Vector2f pos, bool isEnemy, bool isBoss)
@@ -742,6 +738,8 @@ void Scene_GalaxyImpact::spawnBullet(sf::Vector2f pos, bool isEnemy, bool isBoss
         bossBA.setRotation(180.f);
         bBullet->addComponent<CBoundingBox>(bossBb);
         bBullet->addComponent<CTransform>(pos, sf::Vector2f(speed, 0.f));
+        SoundPlayer::getInstance().play("bgun", pos);
+        
     }
     else {
         auto bullet = m_entityManager.addEntity("PlayerBullet");
@@ -905,7 +903,7 @@ void Scene_GalaxyImpact::fireMissile()
             missile->addComponent<CBoundingBox>(bb);
             auto& mRotation = missile->getComponent<CAnimation>().animation.getSprite();
             mRotation.setRotation(-90.f);
-           // SoundPlayer::getInstance().play("LaunchMissile", pos);
+           SoundPlayer::getInstance().play("missile", pos);
         }
     }
 }
@@ -943,7 +941,7 @@ void Scene_GalaxyImpact::spawnEnemy()
 
    // Random number generator for enemy type, quantity, and spawn intervals
    std::uniform_int_distribution<int> enemyTypeDistribution(0, enemyNames.size() - 1);
-   std::uniform_int_distribution<int> quantityDistribution(1, 4);
+   std::uniform_int_distribution<int> quantityDistribution(1, 2);
    std::uniform_real_distribution<float> enemyVerticalSpawnRange(1.0f, 4.0f);
 
 
@@ -973,6 +971,7 @@ void Scene_GalaxyImpact::spawnEnemy()
               enemy->addComponent<CTransform>(pos, eVel);
               enemy->addComponent<CHealth>(10);
               enemy->addComponent<CState>();
+              SoundPlayer::getInstance().play("rusher", pos);
 
 
 
@@ -1080,55 +1079,7 @@ void Scene_GalaxyImpact::spawnEnemy()
      
 
    }
-   // add all tags of enemy ships;
-   //for (const auto& enemyPair : enemyNames) {
-   //    const Enemies enemyType = enemyPair.first;   // Get the enum value
-   //    const std::string& enemyName = enemyPair.second; // Get the enemy name
-
-   //     auto enemy = m_entityManager.addEntity(enemyName); // Add entity using the enemy name
-
-   //   //////use enemyType if needed to differentiate between enemy types
-   //   // if (enemyType == Enemies::Rusher) {
-   //   //     // Do something specific for the Rusher enemy type
-   //   //     enemySpeed = -500;
-   //   //     eVel = normalize(eVel);
-   //   //     eVel = eVel * enemySpeed;
-   //   //     enemy->addComponent<CBoundingBox>(sf::Vector2f(50.f, 45.f));
-   //   //     enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Rusher]));
-   //   //     enemy->addComponent<CTransform>(pos, eVel);
-
-   //   // }
-   //   // if (enemyType == Enemies::Predator) {
-   //   //     // Do something specific for the Rusher enemy type
-   //   //     enemySpeed = -200;
-   //   //     eVel = normalize(eVel);
-   //   //     eVel = eVel * enemySpeed;
-   //   //     pos = sf::Vector2f(view.x + 100.f, view.y / 3);
-   //   //     enemy->addComponent<CBoundingBox>(sf::Vector2f(50.f, 45.f));
-   //   //     enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Predator]));
-   //   //     enemy->addComponent<CTransform>(pos, eVel);
-   //   //     auto& eRotation = enemy->getComponent<CAnimation>().animation.getSprite();
-   //   //     eRotation.setRotation(90.f);
-   //   //    
-
-   //   // }
-
-   //    //if (enemyType == Enemies::Assault) {
-   //    //    // Do something specific for the Assault enemy type
-   //    //    enemySpeed = -200;
-   //    //    eVel = normalize(eVel);
-   //    //    eVel = eVel * enemySpeed;
-   //    //    pos = sf::Vector2f(view.x + 100.f, view.y / 3);
-   //    //    enemy->addComponent<CBoundingBox>(sf::Vector2f(37.f, 38.f));
-   //    //    enemy->addComponent<CAnimation>(Assets::getInstance().getAnimation(enemyNames[Assault]));
-   //    //    enemy->addComponent<CTransform>(pos, eVel);
-   //    //    auto& eRotation = enemy->getComponent<CAnimation>().animation.getSprite();
-   //    //    
-
-
-   //    //}
-
-   //}
+   
 }
 
 
@@ -1216,6 +1167,7 @@ void Scene_GalaxyImpact::checkShipCollisions()
             eHealth -= eHealth;
             if (pHealth <= 0) {
                 pState = "dead";
+                SoundPlayer::getInstance().play("pexplosion", m_player->getComponent<CTransform>().pos);
                 totalLives--;
                 m_player->removeComponent<CBoundingBox>();
                 m_player->removeComponent<CInput>();
@@ -1225,7 +1177,7 @@ void Scene_GalaxyImpact::checkShipCollisions()
             if (eHealth <= 0) {
                 eState = "dead";
                 e->removeComponent<CBoundingBox>();
-                e->removeComponent<CInput>();
+                SoundPlayer::getInstance().play("eexplosion");
                 e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
 
             }
@@ -1244,6 +1196,7 @@ void Scene_GalaxyImpact::checkShipCollisions()
             eHealth -= eHealth;
             if (pHealth <= 0) {
                 pState = "dead";
+                SoundPlayer::getInstance().play("pexplosion", m_player->getComponent<CTransform>().pos);
                 m_player->removeComponent<CBoundingBox>();
                 m_player->removeComponent<CInput>();
                 m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
@@ -1253,6 +1206,7 @@ void Scene_GalaxyImpact::checkShipCollisions()
             }
             if (eHealth <= 0) {
                 eState = "dead";
+                SoundPlayer::getInstance().play("eexplosion");
                 e->removeComponent<CBoundingBox>();
                 e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
 
@@ -1272,6 +1226,7 @@ void Scene_GalaxyImpact::checkShipCollisions()
             eHealth -= eHealth;
             if (pHealth <= 0) {
                 pState = "dead";
+                SoundPlayer::getInstance().play("pexplosion", m_player->getComponent<CTransform>().pos);
                 m_player->removeComponent<CBoundingBox>();
                 m_player->removeComponent<CInput>();
                 m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
@@ -1280,6 +1235,7 @@ void Scene_GalaxyImpact::checkShipCollisions()
             }
             if (eHealth <= 0) {
                 eState = "dead";
+                SoundPlayer::getInstance().play("eexplosion");
                 e->removeComponent<CBoundingBox>();
                 e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
 
@@ -1296,6 +1252,7 @@ void Scene_GalaxyImpact::checkShipCollisions()
             pHealth -= pHealth;
             if (pHealth <= 0) {
                 pState = "dead";
+                SoundPlayer::getInstance().play("pexplosion", m_player->getComponent<CTransform>().pos);
                 m_player->removeComponent<CBoundingBox>();
                 m_player->removeComponent<CInput>();
                 m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
@@ -1327,6 +1284,7 @@ void Scene_GalaxyImpact::checkBulletCollison()
 
                if (eHealth <= 0) {
                    eState = "dead";
+                   SoundPlayer::getInstance().play("eexplosion");
                    e->removeComponent<CBoundingBox>();
                    e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
                }
@@ -1348,6 +1306,7 @@ void Scene_GalaxyImpact::checkBulletCollison()
 
                 if (eHealth <= 0) {
                     eState = "dead";
+                    SoundPlayer::getInstance().play("eexplosion");
                     e->removeComponent<CBoundingBox>();
                     e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
                 }
@@ -1368,6 +1327,7 @@ void Scene_GalaxyImpact::checkBulletCollison()
 
                 if (eHealth <= 0) {
                     eState = "dead";
+                    SoundPlayer::getInstance().play("eexplosion");
                     e->removeComponent<CBoundingBox>();
                     e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
                 }
@@ -1400,6 +1360,7 @@ void Scene_GalaxyImpact::checkBulletCollison()
 
                 bullet->destroy();
                 bmState = "destroyed";
+                SoundPlayer::getInstance().play("eexplosion");
                 bm->removeComponent<CBoundingBox>();
                 bm->addComponent<CAnimation>(Assets::getInstance().getAnimation("rusher-explosion"));
                 
@@ -1421,6 +1382,7 @@ void Scene_GalaxyImpact::checkBulletCollison()
             eBullet->destroy();
             if (pHealth <= 0) {
                 pState = "dead";
+                SoundPlayer::getInstance().play("pexplosion", m_player->getComponent<CTransform>().pos);
                 m_player->removeComponent<CBoundingBox>();
                 m_player->removeComponent<CInput>();
                 m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
@@ -1447,6 +1409,7 @@ void Scene_GalaxyImpact::checkBulletCollison()
 
                 if (pHealth <= 0) {
                     pState = "dead";
+                    SoundPlayer::getInstance().play("pexplosion", m_player->getComponent<CTransform>().pos);
                     m_player->removeComponent<CBoundingBox>();
                     m_player->removeComponent<CInput>();
                     m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
@@ -1480,6 +1443,7 @@ void Scene_GalaxyImpact::checkLaserCollision()
 
                 if (eHealth <= 0) {
                     eState = "dead";
+                    SoundPlayer::getInstance().play("eexplosion");
                     e->removeComponent<CBoundingBox>();
                     e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
                 }
@@ -1498,6 +1462,7 @@ void Scene_GalaxyImpact::checkLaserCollision()
 
                 if (eHealth <= 0) {
                     eState = "dead";
+                    SoundPlayer::getInstance().play("eexplosion");
                     e->removeComponent<CBoundingBox>();
                     e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
                 }
@@ -1515,6 +1480,7 @@ void Scene_GalaxyImpact::checkLaserCollision()
 
                 if (eHealth <= 0) {
                     eState = "dead";
+                    SoundPlayer::getInstance().play("eexplosion");
                     e->removeComponent<CBoundingBox>();
                     e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
                 }
@@ -1548,6 +1514,7 @@ void Scene_GalaxyImpact::checkLaserCollision()
             if (overlap.x > 0 and overlap.y > 0) {
 
                 bmState = "destroyed";
+                SoundPlayer::getInstance().play("eexplosion");
                 bm->removeComponent<CBoundingBox>();
                 bm->addComponent<CAnimation>(Assets::getInstance().getAnimation("rusher-explosion"));
 
@@ -1576,6 +1543,7 @@ void Scene_GalaxyImpact::checkMissileCollision()
 
                 if (eHealth <= 0) {
                     eState = "dead";
+                    SoundPlayer::getInstance().play("eexplosion",e->getComponent<CTransform>().pos);
                     e->removeComponent<CBoundingBox>();
                     e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
                 }
@@ -1595,6 +1563,7 @@ void Scene_GalaxyImpact::checkMissileCollision()
 
                 if (eHealth <= 0) {
                     eState = "dead";
+                    SoundPlayer::getInstance().play("eexplosion", e->getComponent<CTransform>().pos);
                     e->removeComponent<CBoundingBox>();
                     e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
                 }
@@ -1615,12 +1584,13 @@ void Scene_GalaxyImpact::checkMissileCollision()
 
                 if (eHealth <= 0) {
                     eState = "dead";
+                    SoundPlayer::getInstance().play("eexplosion", e->getComponent<CTransform>().pos);
                     e->removeComponent<CBoundingBox>();
                     e->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
                 }
             }
         }
-
+        // missile vs lv1Boss
         for (auto b : m_entityManager.getEntities(bossNames[Lv1Boss])) {
             auto& bState = b->getComponent<CState>().state;
             auto& bHealth = b->getComponent<CHealth>().hp;
@@ -1658,6 +1628,7 @@ void Scene_GalaxyImpact::checkMissileCollision()
 
             if (pHealth <= 0) {
                 pState = "dead";
+                SoundPlayer::getInstance().play("pexplosion", m_player->getComponent<CTransform>().pos);
                 m_player->removeComponent<CBoundingBox>();
                 m_player->removeComponent<CInput>();
                 m_player->addComponent<CAnimation>(Assets::getInstance().getAnimation("explosion"));
@@ -1677,6 +1648,7 @@ void Scene_GalaxyImpact::checkPickupCollisions()
         // player collids with pickup;
         auto overlap = Physics::getOverlap(m_player, e);
         if (overlap.x > 0 and overlap.y > 0) {
+            SoundPlayer::getInstance().play("pick-up", m_player->getComponent<CTransform>().pos);
             auto name = e->getComponent<CAnimation>().animation.m_name;
             if (name == "power-charge") {
 
@@ -1711,7 +1683,7 @@ void Scene_GalaxyImpact::checkPickupCollisions()
 void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
     SoundPlayer::getInstance().removeStoppedSounds();
     m_entityManager.update();
-    if (!m_isPaused and canSpawnEnemies) { m_worldView.move(m_config.scrollSpeed * dt.asSeconds() * 1, 0.f); }
+    if (!m_isPaused and canSpawnEnemies) {m_worldView.move(m_config.scrollSpeed * dt.asSeconds() * 1, 0.f); }
     spawnTimer += dt;
     changeSceneTime += dt;
     
@@ -1744,22 +1716,32 @@ void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
         bossCount--;
         spawnBoss();
         canSpawnEnemies = false;
+        MusicPlayer::getInstance().play("bossTheme");
        
         
     }
 
     for (auto b : m_entityManager.getEntities(bossNames[Lv1Boss])) {
-        auto bstate = b->getComponent<CState>().state;
+        auto& bstate = b->getComponent<CState>().state;
         // W scenario
         if (bstate == "dead" and totalLives > 0) {
+            bool inLoop = true;
             m_isPaused = true;
+            SoundPlayer::getInstance().play("bexplosion");
+            MusicPlayer::getInstance().play("victory_song");
+            MusicPlayer::getInstance().setLoop(!inLoop);
+            bstate = "defeated";
         }
         
         
     }
     // L scenario
-    if (totalLives <= 0) {
+    if (totalLives <= 0 and m_player->getComponent<CState>().state == "dead") {
         m_isPaused = true;
+        bool inLoop = true;
+        MusicPlayer::getInstance().play("defeat_song");
+        MusicPlayer::getInstance().setLoop(!inLoop);
+        m_player->addComponent<CState>().state = "defeated";
     }
    
     // change level scene basic logic
@@ -1776,7 +1758,7 @@ void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
 
             e->destroy();
             bugedEnemiesCount++;
-            std::cout << "Bugged Enemies destroyed " << bugedEnemiesCount << "\n";
+            /*std::cout << "Bugged Enemies destroyed " << bugedEnemiesCount << "\n";*/
         }
     }
 
@@ -1879,37 +1861,8 @@ void Scene_GalaxyImpact::sAnimation(sf::Time dt) {
                     bm->destroy();
                 }
             }
-
-
-            for (auto& t : m_entityManager.getEntities("3turtles")) {
-
-                auto tanim = t->getComponent<CAnimation>();
-                if (tanim.animation.hasEnded()) {
-                    t->removeComponent<CBoundingBox>();
-                }
-                else if (!tanim.animation.hasEnded()) {
-                    t->addComponent<CBoundingBox>(sf::Vector2f(100.f, 15.f));
-                }
-
-
-            }
-
-            for (auto& t : m_entityManager.getEntities("2turtles")) {
-
-                auto tanim = t->getComponent<CAnimation>();
-                if (tanim.animation.hasEnded()) {
-                    t->removeComponent<CBoundingBox>();
-                }
-                else if (!tanim.animation.hasEnded()) {
-                    t->addComponent<CBoundingBox>(sf::Vector2f(66.f, 15.f));
-                }
-            }
         }
     }
-
-
-
-
 
 }
 
@@ -2026,15 +1979,15 @@ void Scene_GalaxyImpact::loadLevel(const std::string& path) {
             sprite.setOrigin(0.f, 0.f);
             sprite.setPosition(pos);
         }
-        /*if (token == "Plnt") {
+        if (token == "Mbkg") {
             std::string name;
             sf::Vector2f pos;
             config >> name >> pos.x >> pos.y;
-            auto e = m_entityManager.addEntity("Plnt");
+            auto e = m_entityManager.addEntity("mbkg");
             auto& sprite = e->addComponent<CSprite>(Assets::getInstance().getTexture(name)).sprite;
             sprite.setOrigin(0.f, 0.f);
             sprite.setPosition(pos);
-        }*/
+        }
         if (token == "ScrollSpeed") {
             config >> m_config.scrollSpeed;
             

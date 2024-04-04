@@ -46,9 +46,10 @@ void SoundPlayer::play(String effect, sf::Vector2f position) {
 
     sound.setBuffer(Assets::getInstance().getSound(effect));
 
-    sound.setPosition(position.x,  0.f, -position.y);   // sounds are in the plane
+    sound.setPosition(position.x,  0.f, -position.y);
     sound.setAttenuation(Attenuation);
     sound.setMinDistance(MinDistance3D);
+    sound.setVolume(40.f);
 
     sound.play();
 }
@@ -70,6 +71,8 @@ void SoundPlayer::setListnerDirection(sf::Vector2f position) {
     // SFML default listner direction is (0,0,-1)
     sf::Listener::setDirection(position.x, 0 ,-position.y);
 }
+
+
 
 sf::Vector2f SoundPlayer::getListnerPosition() const {
     sf::Vector3f pos = sf::Listener::getPosition();

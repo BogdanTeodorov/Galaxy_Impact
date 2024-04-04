@@ -23,6 +23,7 @@ protected:
 
 private:
     std::list<sf::Sound>                                m_sounds;
+    float                                               m_volume;
 
 public:
     static SoundPlayer& getInstance();

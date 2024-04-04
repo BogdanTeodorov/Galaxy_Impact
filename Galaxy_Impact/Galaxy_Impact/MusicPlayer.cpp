@@ -1,14 +1,14 @@
-//
-// Created by David Burchill on 2022-11-29.
-//
 
 #include "MusicPlayer.h"
 #include <stdexcept>
 
 
 MusicPlayer::MusicPlayer() {
-    m_filenames["menuTheme"] = "../assets/Music/dp_frogger.flac";
-    m_filenames["gameTheme"] = "../assets/Music/dp_frogger_tweener.flac";
+    m_filenames["menuTheme"] = "../assets/Music/main-menu-song.mp3";
+    m_filenames["levelTheme"] = "../assets/Music/Level_music.ogg";
+    m_filenames["bossTheme"] = "../assets/Music/Boss_Battle.ogg";
+    m_filenames["victory_song"] = "../assets/Music/Victory_Tune.ogg";
+    m_filenames["defeat_song"] = "../assets/Music/Defeat_Tune.ogg";
 }
 
 void MusicPlayer::addSong(const std::string&name, const std::string&path) {
@@ -33,6 +33,7 @@ void MusicPlayer::play(String theme) {
 
 void MusicPlayer::stop() {
     m_music.stop();
+    
 }
 
 
@@ -47,4 +48,14 @@ void MusicPlayer::setPaused(bool paused) {
 void MusicPlayer::setVolume(float volume) {
     m_volume = volume;
     m_music.setVolume(m_volume);
+}
+
+void MusicPlayer::setLoop(bool inLoop)
+{
+    if (inLoop) {
+        m_music.setLoop(true);
+    }
+    else {
+        m_music.setLoop(false);
+    }
 }
