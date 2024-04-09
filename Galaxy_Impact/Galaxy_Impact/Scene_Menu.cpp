@@ -120,20 +120,29 @@ void Scene_Menu::sRender()
 	}
 	// draw controls section
 	else if (!isMainMenu and state == "controls") {
+		sf::RectangleShape backgroundRect;
+
+		// Draw the background first
 		static sf::Text controlT("Controll Text ", Assets::getInstance().getFont("main"), 36);
-		controlT.setFillColor(normalColor);
+		controlT.setFillColor(selectedColor);
 		std::string controlStr = "W/UP: Move Up\nA/Left: Move Left\nS/Down: Move Down\nD/Right: Move Right\nEnter: Fire\nSpace: Launch Missile\nEsc: Enter Main Menu\n";
 		controlT.setString(controlStr);
 		controlT.setPosition(view.getCenter().x, view.getCenter().y);
 
 		// Align text to center horizontally
 		controlT.setOrigin(controlT.getLocalBounds().width / 2, controlT.getLocalBounds().height / 2);
-		m_game->window().draw(controlT);
+		
+		// Set up background for text
+		backgroundRect.setSize(sf::Vector2f(controlT.getLocalBounds().width*1.5, controlT.getLocalBounds().height + 20)); // Adjust size as needed
+		backgroundRect.setFillColor(sf::Color(50, 50, 50, 100)); // Set background color
+		backgroundRect.setPosition(controlT.getLocalBounds().width / 2, controlT.getLocalBounds().height / 2); // Position it behind the text
 
 		sf::Text footer("Back: <--    QUIT: ESC",
 			Assets::getInstance().getFont("main"), 20);
 		footer.setFillColor(normalColor);
 		footer.setPosition(32, 580);
+		m_game->window().draw(backgroundRect);
+		m_game->window().draw(controlT);
 		m_game->window().draw(footer);
 
 	}
