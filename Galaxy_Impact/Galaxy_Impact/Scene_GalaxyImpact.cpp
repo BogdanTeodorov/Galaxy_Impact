@@ -22,23 +22,22 @@ namespace {
     std::mt19937 rng(rd());
 }
 
-std::uniform_real_distribution<float> spawnIntervalDistribution(2.0f, 4.0f);
+std::uniform_real_distribution<float> spawnIntervalDistribution (3.0f, 6.0f);
 sf::Time spawnInterval;
 sf::Time spawnTimer;
 sf::Vector2f enemyPrevPos;
 int bugedEnemiesCount{ 0 };
-int bossCount{ 1 };
+int bossCount;
 bool sortedUp;
-int lvlIndex{ 0 };
 sf::Time changeSceneTime;
 sf::Time playerInvincibleTime;
 int deathCount;
 bool canSpawnEnemies;
 sf::Time bossChargeAttackCD;
-sf::Time bossMissileCD = sf::seconds(3.f);
+sf::Time bossMissileCD;
 int planetCount = 0;
 int totalLives;
-bool canPlayMusic = false;
+bool canPlayMusic;
 
 
 Scene_GalaxyImpact::Scene_GalaxyImpact(GameEngine* gameEngine, const std::string& levelPath)
@@ -58,6 +57,12 @@ Scene_GalaxyImpact::Scene_GalaxyImpact(GameEngine* gameEngine, const std::string
 
 
 void Scene_GalaxyImpact::init() {
+    canPlayMusic = false;
+    lvlIndex = 0;
+    bossMissileCD = sf::seconds(3.f);
+    bossCount = 1;
+    canPlayMusic = false;
+    bossMissileCD = sf::seconds(3.f);
     totalLives = 3;
     bossChargeAttackCD = sf::seconds(5.f);
     canSpawnEnemies = true;
@@ -65,13 +70,13 @@ void Scene_GalaxyImpact::init() {
     playerInvincibleTime = sf::seconds(2.f);
     enemyPrevPos = sf::Vector2f(0.f, 0.f);
     changeSceneTime = sf::seconds(0.f);
-    spawnPlayer();
-    renderLives();
     m_config.levelPaths.push_back("../assets/level1.txt");
     m_config.levelPaths.push_back("../assets/level2.txt");
     spawnInterval = sf::seconds(spawnIntervalDistribution(rng));
     spawnTimer = sf::seconds(0.f);
     sortedUp = false;
+    spawnPlayer();
+    renderLives();
 }
 
 void Scene_GalaxyImpact::sMovement(sf::Time dt) {
@@ -105,7 +110,6 @@ void Scene_GalaxyImpact::registerActions() {
     registerAction(sf::Keyboard::Escape, "BACK");
     registerAction(sf::Keyboard::Q, "QUIT");
     registerAction(sf::Keyboard::C, "TOGGLE_COLLISION");
-
     registerAction(sf::Keyboard::A, "LEFT");
     registerAction(sf::Keyboard::Left, "LEFT");
     registerAction(sf::Keyboard::D, "RIGHT");
@@ -941,7 +945,7 @@ void Scene_GalaxyImpact::spawnEnemy()
 
    // Random number generator for enemy type, quantity, and spawn intervals
    std::uniform_int_distribution<int> enemyTypeDistribution(0, enemyNames.size() - 1);
-   std::uniform_int_distribution<int> quantityDistribution(1, 2);
+   std::uniform_int_distribution<int> quantityDistribution(2, 3);
    std::uniform_real_distribution<float> enemyVerticalSpawnRange(1.0f, 4.0f);
 
 
@@ -1495,7 +1499,7 @@ void Scene_GalaxyImpact::checkLaserCollision()
 
             if (overlap.x > 0 and overlap.y > 0) {
 
-                bHealth -= laserDmg/3;
+                bHealth -= laserDmg/5;
 
                 if (bHealth <= 0) {
                     bState = "dead";
@@ -1661,7 +1665,7 @@ void Scene_GalaxyImpact::checkPickupCollisions()
                 
                 
             }
-            if (name == "missile-pickup") m_player->getComponent<CMissiles>().missileCount += 3;
+            if (name == "missile-pickup") m_player->getComponent<CMissiles>().missileCount += 1;
 
             if (name == "laser-pickup") {
 
@@ -1731,6 +1735,9 @@ void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
             MusicPlayer::getInstance().play("victory_song");
             MusicPlayer::getInstance().setLoop(!inLoop);
             bstate = "defeated";
+            m_player->removeComponent<CInput>();
+
+            
         }
         
         
@@ -1742,6 +1749,7 @@ void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
         MusicPlayer::getInstance().play("defeat_song");
         MusicPlayer::getInstance().setLoop(!inLoop);
         m_player->addComponent<CState>().state = "defeated";
+        m_player->removeComponent<CInput>();
     }
    
     // change level scene basic logic

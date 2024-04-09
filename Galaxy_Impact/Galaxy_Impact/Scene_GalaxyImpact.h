@@ -34,6 +34,7 @@ private:
     sf::View        m_HudView;
     sf::FloatRect   m_worldBounds;
     LevelConfig     m_config;
+    int lvlIndex;
 
     enum Enemies
     {

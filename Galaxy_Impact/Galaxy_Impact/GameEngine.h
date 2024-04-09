@@ -19,7 +19,7 @@ public:
 	SceneMap			        m_sceneMap;
 	size_t				        m_simulationSpeed{ 1 };
 	bool				        m_running{ true };
-
+	int							levelIndex;
 	void						loadConfigFromFile(const std::string &path, unsigned int &width, unsigned int &height) const;
 	void						init(const std::string& path);
 	void						sUserInput();
@@ -33,9 +33,10 @@ public:
 public:
 
 	GameEngine(const std::string& path);
+	void restartScene(const std::string& sceneName, std::shared_ptr<Scene> scene);
 
 	void changeScene(const std::string& sceneName,
-                     std::shared_ptr<Scene> scene,
+					std::shared_ptr<Scene> scene,
                      bool endCurrentScene = false);
 
 	void				quit();

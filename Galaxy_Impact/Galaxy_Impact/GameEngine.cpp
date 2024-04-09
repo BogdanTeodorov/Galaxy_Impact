@@ -13,6 +13,21 @@ GameEngine::GameEngine(const std::string& path)
 {
     Assets::getInstance().loadFromFile(path) ;
 	init(path);
+	levelIndex = 0;
+}
+
+void GameEngine::restartScene(const std::string& sceneName, std::shared_ptr<Scene> scene)
+{
+	m_sceneMap.erase(sceneName);
+
+	if (!m_sceneMap.contains(sceneName)) {
+		// if scene not in map alrady put new one in
+		// otherwise use existing scene arleady in map
+		m_sceneMap[sceneName] = scene;
+	}
+
+	m_currentScene = sceneName;
+
 }
 
 
