@@ -139,7 +139,7 @@ void Scene_Menu::sRender()
 
 		sf::Text footer("Back: <--    QUIT: ESC",
 			Assets::getInstance().getFont("main"), 20);
-		footer.setFillColor(normalColor);
+		footer.setFillColor(selectedColor);
 		footer.setPosition(32, 580);
 		m_game->window().draw(backgroundRect);
 		m_game->window().draw(controlT);
@@ -163,7 +163,7 @@ void Scene_Menu::sRender()
    /*UP: W    DOWN: S*/
 	sf::Text footer("Control: C    QUIT: ESC", 
 		Assets::getInstance().getFont("main"), 20);
-	footer.setFillColor(normalColor);
+	footer.setFillColor(selectedColor);
 	footer.setPosition(32, 580);
 
 	//m_game->window().clear(backgroundColor);

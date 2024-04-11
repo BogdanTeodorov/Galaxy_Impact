@@ -11,9 +11,8 @@ Music missionTheme      ../assets/Music/Level_music.ogg
 
 # Textures
 Texture Background      ../assets/Textures/background.jpg
-Texture Background2      ../assets/Textures/background2.jpg
+Texture Background2      ../assets/Textures/background-lv2.jpg
 Texture Menu		../assets/Textures/background-menu.png
-Texture Palnet-1	../assets/Textures/Planet-1.png
 Texture Title           ../assets/Textures/FroggerTitle.png
 Texture Entities        ../assets/Textures/Galaxy_Impact-Sprite-Sheet-no-tags.png
 # Sprites

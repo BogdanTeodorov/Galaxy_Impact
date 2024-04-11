@@ -22,7 +22,7 @@ namespace {
     std::mt19937 rng(rd());
 }
 
-std::uniform_real_distribution<float> spawnIntervalDistribution (3.0f, 6.0f);
+std::uniform_real_distribution<float> spawnIntervalDistribution (1.0f, 4.0f);
 sf::Time spawnInterval;
 sf::Time spawnTimer;
 sf::Vector2f enemyPrevPos;
@@ -35,9 +35,9 @@ int deathCount;
 bool canSpawnEnemies;
 sf::Time bossChargeAttackCD;
 sf::Time bossMissileCD;
-int planetCount = 0;
 int totalLives;
 bool canPlayMusic;
+bool isBossDead;
 
 
 Scene_GalaxyImpact::Scene_GalaxyImpact(GameEngine* gameEngine, const std::string& levelPath)
@@ -57,6 +57,8 @@ Scene_GalaxyImpact::Scene_GalaxyImpact(GameEngine* gameEngine, const std::string
 
 
 void Scene_GalaxyImpact::init() {
+
+    isBossDead = false;
     canPlayMusic = false;
     lvlIndex = 0;
     bossMissileCD = sf::seconds(3.f);
@@ -69,7 +71,7 @@ void Scene_GalaxyImpact::init() {
     deathCount = 0;
     playerInvincibleTime = sf::seconds(2.f);
     enemyPrevPos = sf::Vector2f(0.f, 0.f);
-    changeSceneTime = sf::seconds(0.f);
+    changeSceneTime = sf::seconds(5.f);
     m_config.levelPaths.push_back("../assets/level1.txt");
     m_config.levelPaths.push_back("../assets/level2.txt");
     spawnInterval = sf::seconds(spawnIntervalDistribution(rng));
@@ -108,7 +110,7 @@ void Scene_GalaxyImpact::sMovement(sf::Time dt) {
 void Scene_GalaxyImpact::registerActions() {
     registerAction(sf::Keyboard::P, "PAUSE");
     registerAction(sf::Keyboard::Escape, "BACK");
-    registerAction(sf::Keyboard::Q, "QUIT");
+    //registerAction(sf::Keyboard::Q, "QUIT");
     registerAction(sf::Keyboard::C, "TOGGLE_COLLISION");
     registerAction(sf::Keyboard::A, "LEFT");
     registerAction(sf::Keyboard::Left, "LEFT");
@@ -198,7 +200,7 @@ void Scene_GalaxyImpact::playerMovement() {
 
 bool Scene_GalaxyImpact::bossTime(int bossCount)
 {
-    return m_player->getComponent<CTransform>().pos.x >= 1600.f and bossCount == 1;
+    return m_player->getComponent<CTransform>().pos.x >= 800.f and bossCount == 1;
 }
 
 void Scene_GalaxyImpact::bossLaunchMissile()
@@ -237,15 +239,6 @@ void Scene_GalaxyImpact::sRender() {
         }
     }
     
-    
-
-    // draw Score
-    /*static sf::Text scoreT("Score ", Assets::getInstance().getFont("main"), 20);
-    std::string scoreStr = "Score " + std::to_string(m_score);
-    scoreT.setString(scoreStr);
-    scoreT.setFillColor(sf::Color::Cyan);
-    scoreT.setPosition(0.f, 0.f);
-    m_game->window().draw(scoreT);*/
     
     // draw Laser gun ammo
     auto laserAmmo = m_player->getComponent<CLaser>().laserCharge;
@@ -306,9 +299,7 @@ void Scene_GalaxyImpact::sRender() {
         auto bstate = b->getComponent<CState>().state;
         // W scenario
         if (bstate == "defeated" and totalLives > 0) {
-            static sf::Text winnerT("Congratulation", Assets::getInstance().getFont("Arcade"), 35);
-            std::string  winnerStr = "Congratulation!\n Demo Level Completed !!!";
-            winnerT.setString(winnerStr);
+            static sf::Text winnerT("Congratulation\n Level" + std::to_string(m_game->levelIndex) + " Completed\n", Assets::getInstance().getFont("Arcade"), 35);
             winnerT.setFillColor(sf::Color::Green);
             winnerT.setPosition(view.getCenter().x -200, view.getCenter().y);
             m_game->window().draw(winnerT);
@@ -326,37 +317,6 @@ void Scene_GalaxyImpact::sRender() {
         m_game->window().draw(looseT);
     }
 
-   /* if (lilyCount == 5) {
-
-        auto& pos = m_worldView.getSize();
-        static sf::Text winnerT("Congratulation Level Completed", Assets::getInstance().getFont("Arcade"), 35);
-        std::string  winnerStr = "Congratulation!\n Level Completed";
-        winnerT.setString(winnerStr);
-        winnerT.setFillColor(sf::Color::Green);
-        winnerT.setPosition(pos.x / 4, pos.y / 2);
-        m_game->window().draw(winnerT);
-        m_isPaused = true;
-
-
-
-    }
-
-    if (m_lives == 0) {
-        auto& pos = m_worldView.getSize();
-        static sf::Text looserT("Loose", Assets::getInstance().getFont("Arcade"), 35);
-        std::string  looserStr = "Sorry you loose\n Press Q to restart\n";
-        looserT.setString(looserStr);
-        looserT.setFillColor(sf::Color::Red);
-        looserT.setPosition(pos.x / 4, pos.y / 2);
-        m_game->window().draw(looserT);
-        m_isPaused = true;
-        MusicPlayer::getInstance().stop();
-
-
-    }*/
-   
-   
-   
    
     for (auto& e : m_entityManager.getEntities()) {
         if (!e->hasComponent<CAnimation>())
@@ -945,7 +905,7 @@ void Scene_GalaxyImpact::spawnEnemy()
 
    // Random number generator for enemy type, quantity, and spawn intervals
    std::uniform_int_distribution<int> enemyTypeDistribution(0, enemyNames.size() - 1);
-   std::uniform_int_distribution<int> quantityDistribution(2, 3);
+   std::uniform_int_distribution<int> quantityDistribution(1, 1);
    std::uniform_real_distribution<float> enemyVerticalSpawnRange(1.0f, 4.0f);
 
 
@@ -954,7 +914,7 @@ void Scene_GalaxyImpact::spawnEnemy()
    int numEnemies = quantityDistribution(rng);
 
   
-   for (int i = 0; i < numEnemies; i++) {
+   for (int i = 1; i <= numEnemies; i++) {
       Enemies enemyType = static_cast<Enemies>(enemyTypeDistribution(rng));
       auto pos = sf::Vector2f((viewH.x*2) + 100.f, viewV.y / enemyVerticalSpawnRange(rng));
       const std::string& enemyName = enemyNames[enemyType];
@@ -1002,8 +962,8 @@ void Scene_GalaxyImpact::spawnEnemy()
 
           }
           else if (enemyType == Enemies::Predator) {
+
               // Customize Predator enemy
-              // Add additional customization if needed
               gunDamage = 25;
               enemySpeed = -200;
               eVel = normalize(eVel);
@@ -1687,60 +1647,101 @@ void Scene_GalaxyImpact::checkPickupCollisions()
 void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
     SoundPlayer::getInstance().removeStoppedSounds();
     m_entityManager.update();
-    if (!m_isPaused and canSpawnEnemies) {m_worldView.move(m_config.scrollSpeed * dt.asSeconds() * 1, 0.f); }
-    spawnTimer += dt;
-    changeSceneTime += dt;
-    
-    // change laser charge amount
-    auto& laserCharge = m_player->getComponent<CLaser>().laserCharge;
-    auto chargeCost = m_player->getComponent<CLaser>().chargeCost;
-    if (m_player->getComponent<CLaser>().isShooting == true && m_player->getComponent<CInput>().fire == true) {
-        laserCharge -= chargeCost;
-    }
-
-    if (bossMissileCD > sf::Time::Zero && !canSpawnEnemies) {
-        bossMissileCD -= dt;
-    }
-    else if (bossMissileCD <= sf::Time::Zero) {
-
-        bossLaunchMissile();
-        bossMissileCD = sf::seconds(3.f);
-    }
+    if (!m_isPaused) {
+        if (!m_isPaused and canSpawnEnemies) { m_worldView.move(m_config.scrollSpeed * dt.asSeconds() * 1, 0.f); }
+        spawnTimer += dt;
 
 
-    if (spawnTimer >= spawnInterval && canSpawnEnemies) {
-        spawnTimer = sf::seconds(0.f);
-        spawnEnemy();
-        spawnInterval = sf::seconds(spawnIntervalDistribution(rng));
-    }
-    
-    //check if player reached bossTime postion
-
-    if (bossTime(bossCount)) {
-        bossCount--;
-        spawnBoss();
-        canSpawnEnemies = false;
-        MusicPlayer::getInstance().play("bossTheme");
-       
-        
-    }
-
-    for (auto b : m_entityManager.getEntities(bossNames[Lv1Boss])) {
-        auto& bstate = b->getComponent<CState>().state;
-        // W scenario
-        if (bstate == "dead" and totalLives > 0) {
-            bool inLoop = true;
-            m_isPaused = true;
-            SoundPlayer::getInstance().play("bexplosion");
-            MusicPlayer::getInstance().play("victory_song");
-            MusicPlayer::getInstance().setLoop(!inLoop);
-            bstate = "defeated";
-            m_player->removeComponent<CInput>();
-
-            
+        // change laser charge amount
+        auto& laserCharge = m_player->getComponent<CLaser>().laserCharge;
+        auto chargeCost = m_player->getComponent<CLaser>().chargeCost;
+        if (m_player->getComponent<CLaser>().isShooting == true && m_player->getComponent<CInput>().fire == true) {
+            laserCharge -= chargeCost;
         }
-        
-        
+
+        if (bossMissileCD > sf::Time::Zero && !canSpawnEnemies) {
+            bossMissileCD -= dt;
+        }
+        else if (bossMissileCD <= sf::Time::Zero) {
+
+            bossLaunchMissile();
+            bossMissileCD = sf::seconds(3.f);
+        }
+
+
+        if (spawnTimer >= spawnInterval && canSpawnEnemies) {
+            spawnTimer = sf::seconds(0.f);
+            spawnEnemy();
+            spawnInterval = sf::seconds(spawnIntervalDistribution(rng));
+        }
+
+        //check if player reached bossTime postion
+
+        if (bossTime(bossCount)) {
+            bossCount--;
+            spawnBoss();
+            canSpawnEnemies = false;
+            MusicPlayer::getInstance().play("bossTheme");
+
+
+        }
+
+        for (auto b : m_entityManager.getEntities(bossNames[Lv1Boss])) {
+            auto& bstate = b->getComponent<CState>().state;
+            // W scenario
+            if (bstate == "dead" and totalLives > 0) {
+                bool inLoop = true;
+                m_isPaused = true;
+                SoundPlayer::getInstance().play("bexplosion");
+                MusicPlayer::getInstance().play("victory_song");
+                MusicPlayer::getInstance().setLoop(!inLoop);
+                bstate = "defeated";
+                m_player->removeComponent<CInput>();
+                isBossDead = true;
+                m_game->levelIndex++;
+
+
+            }
+
+
+
+        }
+
+        // fixing bug where some enemy entities have positive velocity
+        for (auto e : m_entityManager.getEntities()) {
+            bool isEnemy = (e->getTag() == enemyNames[Rusher] || e->getTag() == enemyNames[Assault] || e->getTag() == enemyNames[Assault]);
+            if (isEnemy && e->getComponent<CTransform>().vel.x > 0) {
+
+                e->destroy();
+                bugedEnemiesCount++;
+                /*std::cout << "Bugged Enemies destroyed " << bugedEnemiesCount << "\n";*/
+            }
+        }
+
+
+        if (m_isPaused) {
+            m_worldView.move(0.f, 0.f);
+            return;
+        }
+        sAnimation(dt);
+        sPlayerInvincibleState(dt);
+        sMovement(dt);
+        sCollisions();
+        adjustPlayerPosition();
+        adjustEnemyPosition();
+        sRender();
+        sGuideMissiles(dt);
+        sGunUpdate(dt);
+        sDestroyOutsideBattleField();
+    }
+    if (isBossDead) {
+
+
+        changeSceneTime -= dt;
+    }
+    else if (!isBossDead and totalLives == 0) {
+
+        changeSceneTime -= dt;
     }
     // L scenario
     if (totalLives <= 0 and m_player->getComponent<CState>().state == "dead") {
@@ -1750,41 +1751,24 @@ void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
         MusicPlayer::getInstance().setLoop(!inLoop);
         m_player->addComponent<CState>().state = "defeated";
         m_player->removeComponent<CInput>();
+
+    }
+
+    if (changeSceneTime <= sf::Time::Zero and totalLives == 0) {
+
+        isBossDead = false;
+        m_game->changeScene("MENU", std::make_shared<Scene_Menu>(m_game), true);
+
+    }
+
+    // go to the next level
+    if (changeSceneTime <= sf::Time::Zero and isBossDead) {
+
+        isBossDead = false;
+        m_game->changeScene("PLAY", std::make_shared<Scene_GalaxyImpact>(m_game, m_config.levelPaths[m_game->levelIndex]), true);
+
     }
    
-    // change level scene basic logic
-
-    //if (changeSceneTime >= sf::seconds(10.f)) {
-    //    lvlIndex++;
-    //    m_game->changeScene("Level2", std::make_shared<Scene_GalaxyImpact>(m_game, m_config.levelPaths[lvlIndex]));
-    //    //
-    //}
-    // fixing bug where some enemy entities have positive velocity
-    for (auto e : m_entityManager.getEntities()) {
-        bool isEnemy = (e->getTag() == enemyNames[Rusher] || e->getTag() == enemyNames[Assault] || e->getTag() == enemyNames[Assault]);
-        if (isEnemy && e->getComponent<CTransform>().vel.x > 0) {
-
-            e->destroy();
-            bugedEnemiesCount++;
-            /*std::cout << "Bugged Enemies destroyed " << bugedEnemiesCount << "\n";*/
-        }
-    }
-
-
-    if (m_isPaused) {
-        m_worldView.move(0.f, 0.f);
-        return;
-    }
-    sAnimation(dt);
-    sPlayerInvincibleState(dt);
-    sMovement(dt);
-    sCollisions();
-    adjustPlayerPosition();
-    adjustEnemyPosition();
-    sRender();
-    sGuideMissiles(dt);
-    sGunUpdate(dt);
-    sDestroyOutsideBattleField();
 
 }
 
