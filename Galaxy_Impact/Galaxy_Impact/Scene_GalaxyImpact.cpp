@@ -299,7 +299,7 @@ void Scene_GalaxyImpact::sRender() {
         auto bstate = b->getComponent<CState>().state;
         // W scenario
         if (bstate == "defeated" and totalLives > 0) {
-            static sf::Text winnerT("Congratulation\n Level" + std::to_string(m_game->levelIndex) + " Completed\n", Assets::getInstance().getFont("Arcade"), 35);
+            static sf::Text winnerT("Congratulation\n Demo Level Completed\n", Assets::getInstance().getFont("Arcade"), 35);
             winnerT.setFillColor(sf::Color::Green);
             winnerT.setPosition(view.getCenter().x -200, view.getCenter().y);
             m_game->window().draw(winnerT);
@@ -1698,7 +1698,7 @@ void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
                 bstate = "defeated";
                 m_player->removeComponent<CInput>();
                 isBossDead = true;
-                m_game->levelIndex++;
+                //m_game->levelIndex++;
 
 
             }
@@ -1761,11 +1761,11 @@ void Scene_GalaxyImpact::sUpdate(sf::Time dt) {
 
     }
 
-    // go to the next level
+    
     if (changeSceneTime <= sf::Time::Zero and isBossDead) {
 
         isBossDead = false;
-        m_game->changeScene("PLAY", std::make_shared<Scene_GalaxyImpact>(m_game, m_config.levelPaths[m_game->levelIndex]), true);
+        m_game->changeScene("MENU", std::make_shared<Scene_Menu>(m_game), true);
 
     }
    
