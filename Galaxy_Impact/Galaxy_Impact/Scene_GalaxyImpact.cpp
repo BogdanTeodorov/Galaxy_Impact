@@ -200,7 +200,7 @@ void Scene_GalaxyImpact::playerMovement() {
 
 bool Scene_GalaxyImpact::bossTime(int bossCount)
 {
-    return m_player->getComponent<CTransform>().pos.x >= 800.f and bossCount == 1;
+    return m_player->getComponent<CTransform>().pos.x >= 1600.f and bossCount == 1;
 }
 
 void Scene_GalaxyImpact::bossLaunchMissile()
