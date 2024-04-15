@@ -110,7 +110,6 @@ void Scene_GalaxyImpact::sMovement(sf::Time dt) {
 void Scene_GalaxyImpact::registerActions() {
     registerAction(sf::Keyboard::P, "PAUSE");
     registerAction(sf::Keyboard::Escape, "BACK");
-    //registerAction(sf::Keyboard::Q, "QUIT");
     registerAction(sf::Keyboard::C, "TOGGLE_COLLISION");
     registerAction(sf::Keyboard::A, "LEFT");
     registerAction(sf::Keyboard::Left, "LEFT");

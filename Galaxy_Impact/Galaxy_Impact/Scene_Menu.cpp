@@ -216,7 +216,7 @@ void Scene_Menu::sDoAction(const Command& action)
 			isMainMenu = true;
 			state = "mmenu";
 		}
-		else if (action.name() == "CONFIRM")
+		else if (action.name() == "CONFIRM" and isMainMenu)
 		{
 			m_menuStrings.push_back("Restart");
 			m_menuStrings.push_back("Resume");
